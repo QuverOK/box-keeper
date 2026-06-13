@@ -4,6 +4,10 @@
   "scripts": {
     "ci": "npm run ci:frontend && npm run ci:backend",
     "ci:frontend": "npm --prefix frontend run ci",
-    "ci:backend": "npm --prefix backend run ci"
+    "ci:backend": "npm --prefix backend run ci",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up --build",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down"
   }
 }

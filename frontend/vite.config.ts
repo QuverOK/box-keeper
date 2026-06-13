@@ -71,11 +71,12 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 3000,
     open: false,
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:4000",
         changeOrigin: true,
       },
     },
