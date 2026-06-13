@@ -10,13 +10,14 @@ import { PrismaService } from "../prisma/prisma.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { AuthResponse } from "./auth-user";
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
   ) {}
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<AuthResponse> {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -31,7 +32,7 @@ export class AuthService {
     const token = this.signToken(user.id, user.email);
     return { user, access_token: token };
   }
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -48,7 +49,10 @@ export class AuthService {
       access_token: token,
     };
   }
-  async changePassword(userId: string, dto: ChangePasswordDto) {
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ success: boolean }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });

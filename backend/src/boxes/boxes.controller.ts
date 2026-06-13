@@ -9,11 +9,19 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
+import { Box, Prisma } from "@prisma/client";
 import { BoxesService } from "./boxes.service";
 import { CreateBoxDto } from "./dto/create-box.dto";
 import { UpdateBoxDto } from "./dto/update-box.dto";
 import { MoveBoxDto } from "./dto/move-box.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { AuthenticatedRequest } from "../auth/auth-user";
+
+type BoxWithItems = Prisma.BoxGetPayload<{ include: { items: true } }>;
+type BoxWithItemsAndStorage = Prisma.BoxGetPayload<{
+  include: { items: true; storage: true };
+}>;
+
 @UseGuards(JwtAuthGuard)
 @Controller()
 export class BoxesController {
@@ -23,10 +31,10 @@ export class BoxesController {
     @Param("storageId")
     storageId: string,
     @Request()
-    req,
+    req: AuthenticatedRequest,
     @Body()
     dto: CreateBoxDto,
-  ) {
+  ): Promise<BoxWithItems> {
     return this.boxesService.create(storageId, req.user.id, dto);
   }
   @Get("storages/:storageId/boxes")
@@ -34,8 +42,8 @@ export class BoxesController {
     @Param("storageId")
     storageId: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<BoxWithItems[]> {
     return this.boxesService.findAll(storageId, req.user.id);
   }
   @Get("boxes/:id")
@@ -43,8 +51,8 @@ export class BoxesController {
     @Param("id")
     id: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<BoxWithItemsAndStorage> {
     return this.boxesService.findOne(id, req.user.id);
   }
   @Patch("boxes/:id")
@@ -52,10 +60,10 @@ export class BoxesController {
     @Param("id")
     id: string,
     @Request()
-    req,
+    req: AuthenticatedRequest,
     @Body()
     dto: UpdateBoxDto,
-  ) {
+  ): Promise<BoxWithItems> {
     return this.boxesService.update(id, req.user.id, dto);
   }
   @Patch("boxes/:id/position")
@@ -63,10 +71,10 @@ export class BoxesController {
     @Param("id")
     id: string,
     @Request()
-    req,
+    req: AuthenticatedRequest,
     @Body()
     dto: MoveBoxDto,
-  ) {
+  ): Promise<BoxWithItems> {
     return this.boxesService.move(id, req.user.id, dto);
   }
   @Delete("boxes/:id")
@@ -74,8 +82,8 @@ export class BoxesController {
     @Param("id")
     id: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<Box> {
     return this.boxesService.remove(id, req.user.id);
   }
 }

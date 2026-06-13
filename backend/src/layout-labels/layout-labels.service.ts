@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from "@nestjs/common";
+import { LayoutLabel } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreateLayoutLabelDto } from "./dto/create-layout-label.dto";
@@ -20,14 +21,18 @@ export class LayoutLabelsService {
       roomWidth: number;
       roomDepth: number;
     },
-  ) {
+  ): void {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
     if (x < 0 || y < 0 || x > roomWcm || y > roomDcm) {
       throw new ConflictException("Подпись выходит за пределы помещения");
     }
   }
-  async create(storageId: string, userId: string, dto: CreateLayoutLabelDto) {
+  async create(
+    storageId: string,
+    userId: string,
+    dto: CreateLayoutLabelDto,
+  ): Promise<LayoutLabel> {
     const storage = await this.storagesService.findOne(storageId, userId);
     this.assertInRoom(dto.x, dto.y, storage);
     return this.prisma.layoutLabel.create({
@@ -40,14 +45,18 @@ export class LayoutLabelsService {
       },
     });
   }
-  async findAll(storageId: string, userId: string) {
+  async findAll(storageId: string, userId: string): Promise<LayoutLabel[]> {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.layoutLabel.findMany({
       where: { storageId },
       orderBy: { createdAt: "asc" },
     });
   }
-  async update(id: string, userId: string, dto: UpdateLayoutLabelDto) {
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateLayoutLabelDto,
+  ): Promise<LayoutLabel> {
     const existing = await this.prisma.layoutLabel.findUnique({
       where: { id },
       include: { storage: true },
@@ -59,7 +68,7 @@ export class LayoutLabelsService {
     this.assertInRoom(x, y, existing.storage);
     return this.prisma.layoutLabel.update({ where: { id }, data: dto });
   }
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string): Promise<LayoutLabel> {
     const existing = await this.prisma.layoutLabel.findUnique({
       where: { id },
     });

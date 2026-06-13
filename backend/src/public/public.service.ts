@@ -1,9 +1,41 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { Item, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+
+export interface PublicBoxResponse {
+  box: {
+    id: string;
+    name: string;
+    color: string;
+    qrCode: string;
+    sizeW: number;
+    sizeD: number;
+    sizeH: number;
+    posX: number | null;
+    posY: number | null;
+    posZ: number | null;
+    storageId: string;
+    createdAt: Date;
+    items: Item[];
+  };
+  storage: {
+    id: string;
+    name: string;
+  };
+}
+
+type PublicStorage = Prisma.StorageGetPayload<{
+  include: {
+    boxes: {
+      include: { items: true };
+    };
+  };
+}> & { userId?: never };
+
 @Injectable()
 export class PublicService {
   constructor(private readonly prisma: PrismaService) {}
-  async findBoxByQrCode(qrCode: string) {
+  async findBoxByQrCode(qrCode: string): Promise<PublicBoxResponse> {
     const box = await this.prisma.box.findUnique({
       where: { qrCode },
       include: {
@@ -35,7 +67,7 @@ export class PublicService {
       storage: box.storage,
     };
   }
-  async findStoragePublic(id: string) {
+  async findStoragePublic(id: string): Promise<Omit<PublicStorage, "userId">> {
     const storage = await this.prisma.storage.findUnique({
       where: { id },
       include: {
