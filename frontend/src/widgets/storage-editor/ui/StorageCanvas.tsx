@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/cn";
 import { computeCanvasHeightCss } from "@/shared/lib/responsive";
 import { computeFanLayout } from "../model/computeFanLayout";
@@ -672,36 +673,43 @@ function StorageCanvasInner({
             />
           )}
 
-          {isScrollExpandedStack && fanLayoutResult?.strip && expandedStack && (
-            <ExpandedStackScrollStrip
-              stack={expandedStack}
-              strip={fanLayoutResult.strip}
-              layout={fanLayout}
-              boxes={expandedStackBoxes}
-              roomWcm={roomWcm}
-              roomHcm={roomHcm}
-              editMode={editMode}
-              spaceHeld={spaceHeld}
-              usePointerDrag={usePointerDrag}
-              draggedBoxId={draggedBoxId}
-              hoveredBoxId={hoveredBoxId}
-              searchActive={searchActive}
-              matchingBoxIds={matchingBoxIds}
-              highlightedBoxId={highlightedBoxId}
-              stackKey={expandedStackId ?? ""}
-              isInteracting={isInteracting}
-              onBoxClick={(box) => {
-                const full = expandedStackBoxes.find((b) => b.id === box.id);
-                if (full) onBoxClick(full);
-              }}
-              onBoxDragStart={handleCanvasDragStart}
-              onDragEnd={handleDragEnd}
-              onBoxHoverEnter={handleBoxHoverEnter}
-              onBoxHoverLeave={handleBoxHoverLeave}
-              onBoxPointerDown={pointerDrag.onBoxPointerDown}
-              onCollapse={() => onExpandedStackIdChange(null)}
-            />
-          )}
+          <AnimatePresence>
+            {isScrollExpandedStack &&
+              fanLayoutResult?.strip &&
+              expandedStack && (
+                <ExpandedStackScrollStrip
+                  key={expandedStackId ?? ""}
+                  stack={expandedStack}
+                  strip={fanLayoutResult.strip}
+                  layout={fanLayout}
+                  boxes={expandedStackBoxes}
+                  roomWcm={roomWcm}
+                  roomHcm={roomHcm}
+                  editMode={editMode}
+                  spaceHeld={spaceHeld}
+                  usePointerDrag={usePointerDrag}
+                  draggedBoxId={draggedBoxId}
+                  hoveredBoxId={hoveredBoxId}
+                  searchActive={searchActive}
+                  matchingBoxIds={matchingBoxIds}
+                  highlightedBoxId={highlightedBoxId}
+                  stackKey={expandedStackId ?? ""}
+                  isInteracting={isInteracting}
+                  onBoxClick={(box) => {
+                    const full = expandedStackBoxes.find(
+                      (b) => b.id === box.id,
+                    );
+                    if (full) onBoxClick(full);
+                  }}
+                  onBoxDragStart={handleCanvasDragStart}
+                  onDragEnd={handleDragEnd}
+                  onBoxHoverEnter={handleBoxHoverEnter}
+                  onBoxHoverLeave={handleBoxHoverLeave}
+                  onBoxPointerDown={pointerDrag.onBoxPointerDown}
+                  onCollapse={() => onExpandedStackIdChange(null)}
+                />
+              )}
+          </AnimatePresence>
 
           <PlacedBoxLayer
             boxes={sortedPlacedBoxes}

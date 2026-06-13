@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { STORAGE_STRIP_SCROLL_CLASS } from "../model/viewportZoom";
@@ -88,7 +89,7 @@ export function ExpandedStackScrollStrip({
   const contentHeightRatio = strip.contentHeightPct / strip.viewportHeightPct;
 
   return (
-    <div
+    <motion.div
       className="absolute z-40"
       style={{
         left: `${strip.anchorLeftPct}%`,
@@ -96,6 +97,10 @@ export function ExpandedStackScrollStrip({
         width: `${strip.viewportWidthPct}%`,
         height: `${strip.viewportHeightPct}%`,
       }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -224,6 +229,6 @@ export function ExpandedStackScrollStrip({
           })}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

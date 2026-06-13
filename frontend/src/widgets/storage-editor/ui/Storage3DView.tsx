@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Box as BoxIcon,
   Layers,
@@ -787,23 +788,30 @@ export function Storage3DView({
               onDropCapture: dragApi?.handleStagingDrop,
             })}
           >
-            {stagingOpen && (
-              <div
-                className={cn(
-                  "w-full bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg p-1.5 sm:rounded-xl sm:p-3 transition-colors",
-                  isStagingDragOver &&
-                    "border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/40",
-                )}
-              >
-                <div className="hidden sm:block">{stagingHeader}</div>
-                {editMode && isStagingDragOver && (
-                  <p className="sm:hidden text-[10px] text-blue-600 dark:text-blue-300 font-medium mb-1 text-center">
-                    Отпустите, чтобы убрать
-                  </p>
-                )}
-                {stagingList}
-              </div>
-            )}
+            <AnimatePresence>
+              {stagingOpen && (
+                <motion.div
+                  key="staging-panel"
+                  initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  style={{ transformOrigin: "bottom center" }}
+                  className={cn(
+                    "w-full bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg p-1.5 sm:rounded-xl sm:p-3 transition-colors",
+                    isStagingDragOver &&
+                      "border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/40",
+                  )}
+                >
+                  {editMode && isStagingDragOver && (
+                    <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-300 font-medium mb-1.5 sm:mb-2 text-center sm:text-left">
+                      Отпустите, чтобы убрать с холста
+                    </p>
+                  )}
+                  {stagingList}
+                </motion.div>
+              )}
+            </AnimatePresence>
             <button
               type="button"
               onClick={() => setStagingOpen((v) => !v)}
