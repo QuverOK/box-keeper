@@ -1,5 +1,7 @@
 # BoxKeeper
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 Веб-приложение для учёта вещей в коробках и их размещения в виртуальных хранилищах (комнатах, кладовых, гаражах). Помогает не потерять, где что лежит: коробки на плане, предметы внутри коробок, поиск и QR-метки.
 
 **Стек:** React + Vite (frontend), NestJS + Prisma + PostgreSQL (backend).
@@ -252,6 +254,7 @@ boxkeeper/
 ├── docker-compose.yml       # Production-стек
 ├── docker-compose.dev.yml   # Dev-стек с hot reload
 ├── package.json       # npm run docker:up, docker:dev, ci
+├── LICENSE            # Apache License 2.0
 ├── CI.md              # Локальный CI и детали Docker
 └── README.md          # Этот файл
 ```
@@ -267,4 +270,6 @@ boxkeeper/
 
 ## Лицензия
 
-Учебный / дипломный проект.
+Проект распространяется под лицензией [Apache License 2.0](./LICENSE).
+
+Вы можете свободно использовать, изменять и распространять код при соблюдении условий лицензии (сохранение copyright и текста лицензии).
