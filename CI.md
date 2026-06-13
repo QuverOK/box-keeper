@@ -76,6 +76,56 @@ cp backend/.env.example backend/.env
 
 После этого `npm run ci` из корня можно запускать без перехода в подпапки.
 
+## Docker
+
+Требуется [Docker Desktop](https://www.docker.com/products/docker-desktop/) (или Docker Engine + Compose).
+Добавить в [Docker Desktop](https://www.docker.com/products/docker-desktop/) - Settings - Docker Engine -
+
+```json
+"registry-mirrors":["https://dh-mirror.gitverse.ru","https://dockerhub.timeweb.cloud","https://dockerhub1.beget.com"]
+```
+
+### Production-режим (сборка + nginx)
+
+Из корня репозитория:
+
+```bash
+npm run docker:up
+```
+
+Приложение: **http://localhost:3000**  
+Демо-логин после seed: `test@boxkeeper.local` / `Test1234!`
+
+Остановка:
+
+```bash
+npm run docker:down
+```
+
+Переменные окружения (опционально) — скопируйте `.env.docker.example` в `.env` в корне репозитория.
+
+| Переменная      | По умолчанию              | Описание                             |
+| --------------- | ------------------------- | ------------------------------------ |
+| `JWT_SECRET`    | `change-me-in-production` | Секрет для JWT                       |
+| `RUN_SEED`      | `true`                    | Заполнить БД демо-данными при старте |
+| `FRONTEND_PORT` | `3000`                    | Порт frontend на хосте               |
+
+### Dev-режим (hot reload)
+
+```bash
+npm run docker:dev
+```
+
+- Frontend: **https://localhost:3000** (самоподписанный SSL, как при локальном `npm run dev`)
+- Backend: http://localhost:4000
+- PostgreSQL: localhost:5432
+
+Остановка:
+
+```bash
+npm run docker:dev:down
+```
+
 ## GitHub Actions и push в feature-ветки
 
 Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) запускается при:
