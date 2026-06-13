@@ -1,5 +1,3 @@
-// This is your Prisma schema file.
-// Database: SQLite (for development), can be changed to PostgreSQL for production.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,14 +7,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 3NF compliance:
-//  - Every non-key attribute depends ONLY on its table's primary key
-//  - No transitive dependencies (room dimensions belong to Storage,
-//    box dimensions belong to Box, position belongs to Box)
-//  - All foreign keys are explicit with cascading deletes
-// ─────────────────────────────────────────────────────────────────────────────
 
 model User {
   id           String    @id @default(cuid())

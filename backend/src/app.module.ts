@@ -9,19 +9,19 @@ import { ItemsModule } from "./items/items.module";
 import { PublicModule } from "./public/public.module";
 import { PartitionsModule } from "./partitions/partitions.module";
 import { LayoutLabelsModule } from "./layout-labels/layout-labels.module";
-
 @Module({
-  imports: [
-    PrismaModule,
-    AuthModule,
-    StoragesModule,
-    BoxesModule,
-    ItemsModule,
-    PublicModule,
-    PartitionsModule,
-    LayoutLabelsModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        PrismaModule,
+        AuthModule,
+        StoragesModule,
+        BoxesModule,
+        ItemsModule,
+        PublicModule,
+        PartitionsModule,
+        LayoutLabelsModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+}

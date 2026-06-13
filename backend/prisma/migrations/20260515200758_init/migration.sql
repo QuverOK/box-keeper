@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -9,7 +8,6 @@ CREATE TABLE "User" (
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Storage" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -25,7 +23,6 @@ CREATE TABLE "Storage" (
     CONSTRAINT "Storage_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Box" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -43,7 +40,6 @@ CREATE TABLE "Box" (
     CONSTRAINT "Box_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "Item" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -56,17 +52,12 @@ CREATE TABLE "Item" (
     CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
--- CreateIndex
 CREATE UNIQUE INDEX "Box_qrCode_key" ON "Box"("qrCode");
 
--- AddForeignKey
 ALTER TABLE "Storage" ADD CONSTRAINT "Storage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "Box" ADD CONSTRAINT "Box_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "Item" ADD CONSTRAINT "Item_boxId_fkey" FOREIGN KEY ("boxId") REFERENCES "Box"("id") ON DELETE CASCADE ON UPDATE CASCADE;
