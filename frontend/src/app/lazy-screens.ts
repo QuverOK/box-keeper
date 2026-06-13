@@ -21,7 +21,10 @@ export const ProfileScreen = lazyScreen(
   () => import("./screens/profile-screen"),
   "ProfileScreen",
 );
-export const QrScreen = lazyScreen(() => import("./screens/qr-screen"), "QrScreen");
+export const QrScreen = lazyScreen(
+  () => import("./screens/qr-screen"),
+  "QrScreen",
+);
 export const StorageScreen = lazyScreen(
   () => import("./screens/storage-screen"),
   "StorageScreen",

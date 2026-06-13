@@ -64,7 +64,8 @@ export default defineConfig({
           if (id.includes("html5-qrcode") || id.includes("/qrcode")) {
             return "qrcode";
           }
-          if (id.includes("react-dom") || id.includes("/react/")) return "react";
+          if (id.includes("react-dom") || id.includes("/react/"))
+            return "react";
         },
       },
     },
