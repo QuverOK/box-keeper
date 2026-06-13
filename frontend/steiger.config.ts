@@ -18,6 +18,7 @@ export default defineConfig([
       "./src/features/box-drag/**",
       "./src/features/box-validation/**",
       "./src/features/layout-drag/**",
+      "./src/features/bulk-items/**",
     ],
     rules: {
       "fsd/insignificant-slice": "off",

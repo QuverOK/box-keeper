@@ -3,8 +3,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { CategoryCombobox } from "@/features/item-category";
 import {
+  CategoryCombobox,
   clampItemDescription,
   MAX_ITEM_DESCRIPTION_LENGTH,
 } from "@/entities/item";

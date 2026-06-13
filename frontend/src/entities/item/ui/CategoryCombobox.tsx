@@ -11,6 +11,7 @@ import {
 } from "@/shared/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/ui/utils";
+
 export interface CategoryComboboxProps {
   id?: string;
   value: string;
@@ -19,6 +20,7 @@ export interface CategoryComboboxProps {
   placeholder?: string;
   disabled?: boolean;
 }
+
 export function CategoryCombobox({
   id,
   value,
@@ -33,11 +35,13 @@ export function CategoryCombobox({
   const showCustomOption =
     trimmedSearch.length > 0 &&
     !categories.some((c) => c.toLowerCase() === trimmedSearch.toLowerCase());
+
   const handleSelect = (selected: string) => {
     onChange(selected);
     setOpen(false);
     setSearch("");
   };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
