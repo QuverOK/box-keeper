@@ -27,15 +27,24 @@ import {
   sliderValueToZoom,
   FULLSCREEN_DEFAULT_ZOOM,
   STORAGE_STAGING_SCROLL_CLASS,
+  STAGING_CARD_SIZE_CLASS,
+  STAGING_PANEL_TWO_COLS_MAX_W,
+  STAGING_SCROLL_WRAPPER_CLASS,
 } from "../model/viewportZoom";
 import { useFullscreen } from "../model/useFullscreen";
 import { Slider } from "@/shared/ui/slider";
-import { shouldUsePointerBoxDrag } from "../model/useBoxPointerDrag";
 import {
   StorageCanvas,
   type StorageCanvasDragApi,
+  type StorageCanvasLayoutDragApi,
   type StorageCanvasZoomState,
 } from "./StorageCanvas";
+import {
+  LayoutEditControls,
+  type PendingTemplateDrop,
+} from "./LayoutEditControls";
+import type { LayoutDragItem } from "../model/useLayoutDrag";
+import { PanelDragHint } from "./PanelDragHint";
 import { computeStacks } from "../model/boxPlacement";
 import { boxHighlightCn } from "../lib/box-highlight";
 import { getContrastColor, getBorderColor } from "../lib/boxColor";
@@ -88,10 +97,62 @@ interface Storage3DViewProps {
   layoutEditMode?: boolean;
   onMovePartition?: (id: string, x: number, y: number) => void;
   onMoveLayoutLabel?: (id: string, x: number, y: number) => void;
+  onCreatePartition?: (data: {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    depth: number;
+    height: number;
+    label?: string;
+  }) => Promise<void>;
+  onDeletePartition?: (id: string) => Promise<void>;
+  onUpdatePartition?: (
+    id: string,
+    data: {
+      x: number;
+      y: number;
+      z: number;
+      width: number;
+      depth: number;
+      height: number;
+      label?: string;
+    },
+  ) => Promise<void>;
+  onCreateLayoutLabel?: (data: {
+    x: number;
+    y: number;
+    text: string;
+  }) => Promise<void>;
+  onDeleteLayoutLabel?: (id: string) => Promise<void>;
+  onUpdateLayoutLabel?: (
+    id: string,
+    data: {
+      x: number;
+      y: number;
+      text: string;
+    },
+  ) => Promise<void>;
   onToggleEditMode?: () => void;
   onToggleLayoutEditMode?: () => void;
   onAddBox?: () => void;
   isSavingStorage?: boolean;
+  onDialogPortalHostChange?: (host: HTMLDivElement | null) => void;
+  onFullscreenControlChange?: (
+    control: { toggle: () => void; isFullscreen: boolean } | null,
+  ) => void;
+  layoutDragApiRef: React.MutableRefObject<StorageCanvasLayoutDragApi | null>;
+  onLayoutDragMetaChange: (meta: {
+    draggedLayoutItem: LayoutDragItem | null;
+    touchHoldTemplate: string | null;
+    isTouchHoldActive: boolean;
+    isPointerDragging: boolean;
+  }) => void;
+  onTemplatePlaced: (data: PendingTemplateDrop) => void;
+  pendingTemplateDrop: PendingTemplateDrop | null;
+  onPendingTemplateDropHandled: () => void;
+  usePointerDrag: boolean;
+  layoutDragApi: StorageCanvasLayoutDragApi | null;
 }
 export function Storage3DView({
   boxes,
@@ -108,10 +169,25 @@ export function Storage3DView({
   layoutEditMode = false,
   onMovePartition,
   onMoveLayoutLabel,
+  onCreatePartition,
+  onDeletePartition,
+  onUpdatePartition,
+  onCreateLayoutLabel,
+  onDeleteLayoutLabel,
+  onUpdateLayoutLabel,
   onToggleEditMode,
   onToggleLayoutEditMode,
   onAddBox,
   isSavingStorage = false,
+  onDialogPortalHostChange,
+  onFullscreenControlChange,
+  layoutDragApiRef,
+  onLayoutDragMetaChange,
+  onTemplatePlaced,
+  pendingTemplateDrop,
+  onPendingTemplateDropHandled,
+  usePointerDrag,
+  layoutDragApi,
 }: Storage3DViewProps) {
   void _gridSize;
   const [viewMode] = useState<ViewMode>("XY");
@@ -123,6 +199,9 @@ export function Storage3DView({
   } = useFullscreen();
   const [expandedStackId, setExpandedStackId] = useState<string | null>(null);
   const [stagingOpen, setStagingOpen] = useState(false);
+  const [layoutPanelOpen, setLayoutPanelOpen] = useState(false);
+  const [dialogPortalHost, setDialogPortalHost] =
+    useState<HTMLDivElement | null>(null);
   const dragApiRef = useRef<StorageCanvasDragApi | null>(null);
   const zoomApiRef = useRef<StorageCanvasZoomState | null>(null);
   const isSliderDraggingRef = useRef(false);
@@ -230,14 +309,6 @@ export function Storage3DView({
   }, [expandedStackId]);
 
   const resetZoomTarget = isFullscreen ? FULLSCREEN_DEFAULT_ZOOM : 1;
-  const [usePointerDrag, setUsePointerDrag] = useState(shouldUsePointerBoxDrag);
-  useEffect(() => {
-    const mql = window.matchMedia("(pointer: coarse)");
-    const onChange = () => setUsePointerDrag(mql.matches);
-    mql.addEventListener("change", onChange);
-    setUsePointerDrag(mql.matches);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
 
   const handleZoomToPlacedBox = useCallback((box: PlacedBox) => {
     zoomApiRef.current?.zoomToBox(box.x, box.y, box.sizeW, box.sizeD);
@@ -265,6 +336,31 @@ export function Storage3DView({
     }
   }, [isCanvasDragActive]);
 
+  const hasLayoutControls =
+    !!onCreatePartition &&
+    !!onDeletePartition &&
+    !!onCreateLayoutLabel &&
+    !!onDeleteLayoutLabel;
+  const layoutItemCount = partitions.length + layoutLabels.length;
+
+  useEffect(() => {
+    if (isFullscreen && layoutEditMode && hasLayoutControls) {
+      setLayoutPanelOpen(true);
+    }
+  }, [isFullscreen, layoutEditMode, hasLayoutControls]);
+
+  useEffect(() => {
+    if (!onDialogPortalHostChange) return;
+    onDialogPortalHostChange(isFullscreen ? dialogPortalHost : null);
+    return () => onDialogPortalHostChange(null);
+  }, [isFullscreen, dialogPortalHost, onDialogPortalHostChange]);
+
+  useEffect(() => {
+    if (!onFullscreenControlChange) return;
+    onFullscreenControlChange({ toggle: toggleFullscreen, isFullscreen });
+    return () => onFullscreenControlChange(null);
+  }, [onFullscreenControlChange, toggleFullscreen, isFullscreen]);
+
   const canvasRegion = (
     <StorageCanvas
       boxes={boxes}
@@ -285,11 +381,14 @@ export function Storage3DView({
       layoutLabels={layoutLabels}
       onMovePartition={onMovePartition}
       onMoveLayoutLabel={onMoveLayoutLabel}
+      onTemplatePlaced={onTemplatePlaced}
       isFullscreen={isFullscreen}
       resetZoomTarget={resetZoomTarget}
       dragApiRef={dragApiRef}
+      layoutDragApiRef={layoutDragApiRef}
       zoomApiRef={zoomApiRef}
       onDragMetaChange={handleDragMetaChange}
+      onLayoutDragMetaChange={onLayoutDragMetaChange}
       onZoomStateChange={handleZoomStateChange}
     />
   );
@@ -411,33 +510,50 @@ export function Storage3DView({
       </Button>
     </div>
   );
-  const stagingList =
+  const stagingDropHandlers =
+    editMode && dragApi
+      ? {
+          "data-staging-drop-zone": true as const,
+          onDragOverCapture: dragApi.handleStagingDragOver,
+          onDragLeaveCapture: dragApi.handleStagingDragLeave,
+          onDropCapture: dragApi.handleStagingDrop,
+        }
+      : {};
+
+  const renderStagingList = (scrollContainer: "inner" | "none" = "inner") =>
     unplacedBoxes.length === 0 ? (
-      <div
-        className={cn(
-          "border-2 border-dashed rounded-lg py-2 px-2 text-center text-[10px] sm:py-6 sm:px-3 sm:text-sm transition-colors",
-          editMode && isStagingDragOver
-            ? "border-blue-400 dark:border-blue-600 text-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40"
-            : "border-border text-muted-foreground",
-        )}
-        data-staging-drop-zone
-      >
-        {editMode ? (
-          <>
-            <span className="sm:hidden">Перетащите сюда</span>
-            <span className="hidden sm:inline">
-              Перетащите сюда коробку с холста, чтобы убрать её
-            </span>
-          </>
-        ) : (
-          "Все коробки размещены в хранилище"
-        )}
-      </div>
+      scrollContainer === "none" && editMode ? (
+        <PanelDragHint kind="emptyStaging" active={isStagingDragOver} />
+      ) : (
+        <div
+          className={cn(
+            "border-2 border-dashed rounded-lg py-2 px-2 text-center text-[10px] sm:py-6 sm:px-3 sm:text-sm transition-colors",
+            editMode && isStagingDragOver
+              ? "border-blue-400 dark:border-blue-600 text-blue-500 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40"
+              : "border-border text-muted-foreground",
+          )}
+          data-staging-drop-zone
+        >
+          {editMode ? (
+            <>
+              <span className="sm:hidden">Перетащите сюда</span>
+              <span className="hidden sm:inline">
+                Перетащите сюда коробку с холста, чтобы убрать её
+              </span>
+            </>
+          ) : (
+            "Все коробки размещены в хранилище"
+          )}
+        </div>
+      )
     ) : (
       <div
         className={cn(
-          STORAGE_STAGING_SCROLL_CLASS,
-          "flex gap-1.5 p-1.5 overflow-x-auto pb-0.5 min-h-14 rounded-lg transition-colors sm:gap-3 sm:p-3 sm:pb-1 sm:min-h-[96px]",
+          scrollContainer === "inner" && STORAGE_STAGING_SCROLL_CLASS,
+          "flex gap-1.5 min-h-14 rounded-lg transition-colors sm:gap-3 sm:min-h-[96px]",
+          scrollContainer === "inner"
+            ? cn(STORAGE_STAGING_SCROLL_CLASS, "p-1.5 overflow-x-auto sm:p-3")
+            : "w-max min-w-full pb-0",
           editMode && isStagingDragOver && "bg-blue-50 dark:bg-blue-950/40",
         )}
         data-staging-drop-zone
@@ -445,6 +561,11 @@ export function Storage3DView({
         {unplacedBoxes.map((box) => {
           const isDragging = draggedBoxId === box.id;
           const isHovered = hoveredBoxId === box.id;
+          const isTouchHold =
+            usePointerDrag &&
+            editMode &&
+            dragApi?.touchHoldBoxId === box.id &&
+            !isDragging;
           const dimmed = searchActive && !isSearchMatch(box.id);
           const html5Draggable = editMode && !usePointerDrag;
           return (
@@ -461,7 +582,8 @@ export function Storage3DView({
             >
               <Card
                 className={cn(
-                  "w-17 h-14 sm:w-28 sm:h-24 transition-[box-shadow,opacity] relative overflow-hidden select-none border shadow-sm",
+                  STAGING_CARD_SIZE_CLASS,
+                  "transition-[box-shadow,opacity,transform] relative overflow-hidden select-none border shadow-sm",
                   editMode && !usePointerDrag
                     ? isDragging
                       ? "cursor-grabbing"
@@ -471,6 +593,7 @@ export function Storage3DView({
                         ? "cursor-grabbing"
                         : "cursor-default"
                       : "cursor-pointer hover:shadow-md",
+                  isTouchHold && "scale-[0.97] opacity-90",
                   getBoxHighlight(box.id, { isDragging }),
                   dimmed && !isDragging && "opacity-30",
                 )}
@@ -481,6 +604,13 @@ export function Storage3DView({
                     editMode && isHovered && !isDragging
                       ? `2px solid ${getBorderColor(box.color).replace("0.2", "0.5").replace("0.25", "0.5")}`
                       : undefined,
+                  ...(editMode && usePointerDrag
+                    ? {
+                        touchAction: isDragging ? "none" : "pan-x pinch-zoom",
+                        WebkitTouchCallout: "none",
+                        WebkitTapHighlightColor: "transparent",
+                      }
+                    : undefined),
                 }}
                 onMouseEnter={
                   editMode ? () => dragApi?.setHoveredBoxId(box.id) : undefined
@@ -488,29 +618,24 @@ export function Storage3DView({
                 onMouseLeave={
                   editMode ? () => dragApi?.setHoveredBoxId(null) : undefined
                 }
-                onClick={() => setFocusedBoxId(box.id)}
+                onPointerDown={
+                  usePointerDrag && editMode
+                    ? (e) =>
+                        dragApi?.onBoxPointerDown(
+                          e,
+                          box.id,
+                          false,
+                          dragApi.getStagingOffsetPx(box.id),
+                        )
+                    : undefined
+                }
+                onClick={() => {
+                  if (dragApi?.consumeClickSuppression()) return;
+                  setFocusedBoxId(box.id);
+                }}
               >
                 {editMode && (
-                  <div
-                    className={cn(
-                      "absolute top-0 left-0 z-10 p-1 text-muted-foreground opacity-70",
-                      usePointerDrag &&
-                        "touch-none cursor-grab active:cursor-grabbing",
-                    )}
-                    onPointerDown={
-                      usePointerDrag
-                        ? (e) => {
-                            e.stopPropagation();
-                            dragApi?.onBoxPointerDown(
-                              e,
-                              box.id,
-                              false,
-                              dragApi.getStagingOffsetPx(box.id),
-                            );
-                          }
-                        : undefined
-                    }
-                  >
+                  <div className="absolute top-0 left-0 z-10 flex items-center justify-center min-w-8 min-h-8 p-1.5 text-muted-foreground opacity-70 pointer-events-none">
                     <GripVertical className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </div>
                 )}
@@ -533,8 +658,13 @@ export function Storage3DView({
             </div>
           );
         })}
-        {editMode && (
-          <div className="shrink-0 w-17 h-14 sm:w-28 sm:h-24 border-2 border-dashed border-border rounded-lg flex items-center justify-center">
+        {editMode && scrollContainer !== "none" && (
+          <div
+            className={cn(
+              STAGING_CARD_SIZE_CLASS,
+              "shrink-0 border-2 border-dashed border-border rounded-lg flex items-center justify-center",
+            )}
+          >
             <p className="text-[9px] sm:text-xs text-muted-foreground text-center px-1 sm:px-3 leading-tight">
               Перетащите сюда с холста
             </p>
@@ -737,12 +867,27 @@ export function Storage3DView({
         ref={containerRef}
         className="fixed inset-0 z-50 bg-background overflow-hidden"
       >
+        <div
+          ref={setDialogPortalHost}
+          className="fixed inset-0 z-100 pointer-events-none [&_[data-slot=dialog-overlay]]:pointer-events-auto [&_[data-slot=dialog-content]]:pointer-events-auto"
+        />
         <div className="relative h-full w-full overflow-hidden">
           {canvasRegion}
 
           {editMode && (
             <div className="absolute top-3 left-3 z-20 hidden sm:block text-sm text-blue-700 dark:text-blue-200 font-medium bg-card/95 backdrop-blur px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800 shadow">
               Режим редактирования
+            </div>
+          )}
+
+          {layoutEditMode && (
+            <div
+              className={cn(
+                "absolute top-3 z-20 hidden sm:block text-sm text-emerald-700 dark:text-emerald-200 font-medium bg-card/95 backdrop-blur px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 shadow",
+                editMode ? "left-3 top-12" : "left-3",
+              )}
+            >
+              Режим планировки
             </div>
           )}
 
@@ -767,7 +912,7 @@ export function Storage3DView({
           )}
 
           {focusedBox && (
-            <div className="absolute z-20 left-3 right-3 bottom-16 sm:hidden">
+            <div className="absolute z-25 left-3 right-3 top-14 sm:hidden">
               {mobileBoxInfoBar}
             </div>
           )}
@@ -778,15 +923,11 @@ export function Storage3DView({
 
           <div
             className={cn(
-              "absolute z-30 right-3 bottom-16 sm:bottom-3 flex flex-col items-end gap-1.5 max-w-17 sm:max-w-[min(85vw,20rem)]",
-              isCanvasDragActive && "pointer-events-auto",
+              "absolute z-30 right-3 bottom-16 sm:bottom-3 flex flex-col items-end gap-1.5 pointer-events-none",
+              stagingOpen
+                ? cn("w-full", STAGING_PANEL_TWO_COLS_MAX_W)
+                : "max-w-17 sm:max-w-[min(85vw,20rem)]",
             )}
-            {...(editMode && {
-              "data-staging-drop-zone": true,
-              onDragOverCapture: dragApi?.handleStagingDragOver,
-              onDragLeaveCapture: dragApi?.handleStagingDragLeave,
-              onDropCapture: dragApi?.handleStagingDrop,
-            })}
           >
             <AnimatePresence>
               {stagingOpen && (
@@ -798,17 +939,26 @@ export function Storage3DView({
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   style={{ transformOrigin: "bottom center" }}
                   className={cn(
-                    "w-full bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg p-1.5 sm:rounded-xl sm:p-3 transition-colors",
+                    "pointer-events-auto w-full flex flex-col gap-1.5 bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg p-1.5 sm:rounded-xl sm:p-3 transition-colors",
                     isStagingDragOver &&
                       "border-blue-400 dark:border-blue-600 ring-2 ring-blue-400/40",
                   )}
+                  {...stagingDropHandlers}
                 >
-                  {editMode && isStagingDragOver && (
-                    <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-300 font-medium mb-1.5 sm:mb-2 text-center sm:text-left">
-                      Отпустите, чтобы убрать с холста
-                    </p>
+                  {editMode && unplacedBoxes.length > 0 && (
+                    <PanelDragHint
+                      kind="dropToStaging"
+                      active={isStagingDragOver}
+                    />
                   )}
-                  {stagingList}
+                  <div
+                    className={cn(
+                      STORAGE_STAGING_SCROLL_CLASS,
+                      STAGING_SCROLL_WRAPPER_CLASS,
+                    )}
+                  >
+                    {renderStagingList("none")}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -816,9 +966,10 @@ export function Storage3DView({
               type="button"
               onClick={() => setStagingOpen((v) => !v)}
               className={cn(
-                "flex items-center gap-1.5 bg-card/95 backdrop-blur border border-border shadow-lg rounded-full px-2.5 py-1 text-xs font-medium shrink-0 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm",
+                "pointer-events-auto flex items-center gap-1.5 bg-card/95 backdrop-blur border border-border shadow-lg rounded-full px-2.5 py-1 text-xs font-medium shrink-0 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm",
                 isStagingDragOver && "border-blue-400 dark:border-blue-600",
               )}
+              {...stagingDropHandlers}
             >
               <Inbox className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
               <span className="hidden min-[401px]:inline">Не размещённые</span>
@@ -832,6 +983,81 @@ export function Storage3DView({
               )}
             </button>
           </div>
+
+          {layoutEditMode && hasLayoutControls && (
+            <div
+              className={cn(
+                "absolute z-30 left-3 bottom-16 sm:bottom-3 flex flex-col items-start gap-1.5 pointer-events-none",
+                layoutPanelOpen
+                  ? cn("w-full", STAGING_PANEL_TWO_COLS_MAX_W)
+                  : "max-w-17 sm:max-w-[min(85vw,20rem)]",
+              )}
+            >
+              <AnimatePresence>
+                {layoutPanelOpen && (
+                  <motion.div
+                    key="layout-panel"
+                    initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    style={{ transformOrigin: "bottom center" }}
+                    className={cn(
+                      "pointer-events-auto w-full flex flex-col gap-1.5 bg-card/95 backdrop-blur border border-border shadow-lg rounded-lg p-1.5 sm:rounded-xl sm:p-3 transition-colors",
+                    )}
+                  >
+                    <PanelDragHint kind="dragToCanvas" />
+                    <div
+                      className={cn(
+                        STORAGE_STAGING_SCROLL_CLASS,
+                        STAGING_SCROLL_WRAPPER_CLASS,
+                      )}
+                    >
+                      <LayoutEditControls
+                        variant="compact"
+                        scrollContainer="none"
+                        dialogPortalContainer={dialogPortalHost}
+                        partitions={partitions}
+                        layoutLabels={layoutLabels}
+                        roomSize={roomSize}
+                        onCreatePartition={onCreatePartition}
+                        onDeletePartition={onDeletePartition}
+                        onUpdatePartition={onUpdatePartition}
+                        onCreateLabel={onCreateLayoutLabel}
+                        onDeleteLabel={onDeleteLayoutLabel}
+                        onUpdateLabel={onUpdateLayoutLabel}
+                        layoutDragApi={layoutDragApi}
+                        layoutEditMode={layoutEditMode}
+                        usePointerDrag={usePointerDrag}
+                        pendingTemplateDrop={
+                          isFullscreen ? pendingTemplateDrop : null
+                        }
+                        onPendingTemplateDropHandled={
+                          onPendingTemplateDropHandled
+                        }
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <button
+                type="button"
+                onClick={() => setLayoutPanelOpen((v) => !v)}
+                className="pointer-events-auto flex items-center gap-1.5 bg-card/95 backdrop-blur border border-border shadow-lg rounded-full px-2.5 py-1 text-xs font-medium shrink-0 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="hidden min-[401px]:inline">Планировка</span>
+                <span className="text-[10px] sm:text-xs bg-muted text-muted-foreground px-1.5 py-px sm:px-2 sm:py-0.5 rounded-full font-medium">
+                  {layoutItemCount}
+                </span>
+                {layoutPanelOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                ) : (
+                  <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -869,7 +1095,7 @@ export function Storage3DView({
             onDropCapture={editMode ? dragApi?.handleStagingDrop : undefined}
           >
             {stagingHeader}
-            {stagingList}
+            {renderStagingList()}
           </Card>
 
           <Card className="p-4 max-[360px]:p-3">

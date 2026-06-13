@@ -6,12 +6,14 @@ export interface DraggableLayoutLabelProps {
   text: string;
   fontSize: number;
   layoutEditMode: boolean;
+  usePointerDrag?: boolean;
   isDragging: boolean;
   isHovered: boolean;
   anyDragActive: boolean;
   style?: React.CSSProperties;
   onDragStart: (e: React.DragEvent, item: LayoutDragItem) => void;
   onDragEnd: () => void;
+  onPointerDown?: (e: React.PointerEvent, item: LayoutDragItem) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
@@ -19,16 +21,20 @@ export function DraggableLayoutLabel({
   text,
   fontSize,
   layoutEditMode,
+  usePointerDrag = false,
   isDragging,
   isHovered,
   anyDragActive,
   style,
   onDragStart,
   onDragEnd,
+  onPointerDown,
   onMouseEnter,
   onMouseLeave,
   id,
 }: DraggableLayoutLabelProps) {
+  const item: LayoutDragItem = { kind: "label", id };
+  const pointerDragActive = usePointerDrag && layoutEditMode;
   return (
     <div
       className={cn(
@@ -41,10 +47,18 @@ export function DraggableLayoutLabel({
           !isDragging &&
           "outline outline-2 outline-primary/50 rounded",
       )}
-      style={{ ...style, fontSize }}
-      draggable={layoutEditMode}
-      onDragStart={(e) => onDragStart(e, { kind: "label", id })}
+      style={{
+        ...style,
+        fontSize,
+        touchAction: pointerDragActive ? "none" : undefined,
+        WebkitTouchCallout: pointerDragActive ? "none" : undefined,
+      }}
+      draggable={layoutEditMode && !usePointerDrag}
+      onDragStart={(e) => onDragStart(e, item)}
       onDragEnd={onDragEnd}
+      onPointerDown={
+        pointerDragActive ? (e) => onPointerDown?.(e, item) : undefined
+      }
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >

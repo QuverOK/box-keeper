@@ -18,6 +18,12 @@ export const FULLSCREEN_DEFAULT_ZOOM = 0.8;
 export const STORAGE_STRIP_SCROLL_CLASS = "storage-strip-scroll";
 export const STORAGE_STAGING_SCROLL_CLASS = "storage-staging-scroll";
 export const STORAGE_CANVAS_VIEWPORT_CLASS = "storage-canvas-viewport";
+export const STAGING_CARD_SIZE_CLASS = "w-17 h-14 sm:w-28 sm:h-24";
+/** Ширина открытой панели: 2 карточки + gap + padding */
+export const STAGING_PANEL_TWO_COLS_MAX_W =
+  "max-w-[9.625rem] sm:max-w-[16.25rem]";
+export const STAGING_SCROLL_WRAPPER_CLASS =
+  "overflow-x-auto overscroll-x-contain w-full";
 
 export function computeZoomMax(baseScale: number, viewportW = 800): number {
   if (baseScale <= 0) return ZOOM_MAX_FLOOR;

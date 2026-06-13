@@ -20,11 +20,20 @@ import {
   useBoxPointerDrag,
   shouldUsePointerBoxDrag,
 } from "../model/useBoxPointerDrag";
+import { useLayoutPointerDrag } from "../model/useLayoutPointerDrag";
 import {
   useLayoutDrag,
   LAYOUT_PARTITION_PREFIX,
   LAYOUT_LABEL_PREFIX,
+  LAYOUT_TEMPLATE_PARTITION,
+  LAYOUT_TEMPLATE_LABEL,
+  type LayoutDragItem,
 } from "../model/useLayoutDrag";
+import {
+  DEFAULT_LABEL_TEXT,
+  DEFAULT_PART_DEPTH,
+  DEFAULT_PART_WIDTH,
+} from "../model/layoutDefaults";
 import { computeStacks } from "../model/boxPlacement";
 import type {
   PlacedBoxDims,
@@ -73,10 +82,31 @@ export interface StorageCanvasDragApi {
   handleDragEnd: (e: React.DragEvent) => void;
   handleStagingCardDragStart: (e: React.DragEvent, boxId: string) => void;
   onBoxPointerDown: ReturnType<typeof useBoxPointerDrag>["onBoxPointerDown"];
+  consumeClickSuppression: ReturnType<
+    typeof useBoxPointerDrag
+  >["consumeClickSuppression"];
   setHoveredBoxId: (id: string | null) => void;
   getStagingOffsetPx: (
     boxId: string,
   ) => { pxX: number; pxY: number } | undefined;
+}
+
+export interface StorageCanvasLayoutDragApi {
+  draggedLayoutItem: LayoutDragItem | null;
+  touchHoldTemplate: string | null;
+  isTouchHoldActive: boolean;
+  isPointerDragging: boolean;
+  handleTemplateDragStart: (e: React.DragEvent, item: LayoutDragItem) => void;
+  handleLayoutDragEnd: () => void;
+  onLayoutTemplatePointerDown: ReturnType<
+    typeof useLayoutPointerDrag
+  >["onLayoutTemplatePointerDown"];
+  getTemplateOffsetPx: (
+    item: LayoutDragItem,
+  ) => { pxX: number; pxY: number } | undefined;
+  consumeClickSuppression: ReturnType<
+    typeof useLayoutPointerDrag
+  >["consumeClickSuppression"];
 }
 
 export interface StorageCanvasZoomState {
@@ -116,14 +146,26 @@ export interface StorageCanvasProps {
   layoutLabels: LayoutLabel[];
   onMovePartition?: (id: string, x: number, y: number) => void;
   onMoveLayoutLabel?: (id: string, x: number, y: number) => void;
+  onTemplatePlaced?: (data: {
+    kind: "partition" | "label";
+    x: number;
+    y: number;
+  }) => void;
   isFullscreen: boolean;
   resetZoomTarget: number;
   dragApiRef: React.MutableRefObject<StorageCanvasDragApi | null>;
+  layoutDragApiRef: React.MutableRefObject<StorageCanvasLayoutDragApi | null>;
   zoomApiRef: React.MutableRefObject<StorageCanvasZoomState | null>;
   onDragMetaChange: (meta: {
     draggedBoxId: string | null;
     hoveredBoxId: string | null;
     isStagingDragOver: boolean;
+  }) => void;
+  onLayoutDragMetaChange?: (meta: {
+    draggedLayoutItem: LayoutDragItem | null;
+    touchHoldTemplate: string | null;
+    isTouchHoldActive: boolean;
+    isPointerDragging: boolean;
   }) => void;
   onZoomStateChange: (state: StorageCanvasZoomState) => void;
 }
@@ -147,11 +189,14 @@ function StorageCanvasInner({
   layoutLabels,
   onMovePartition,
   onMoveLayoutLabel,
+  onTemplatePlaced,
   isFullscreen,
   resetZoomTarget,
   dragApiRef,
+  layoutDragApiRef,
   zoomApiRef,
   onDragMetaChange,
+  onLayoutDragMetaChange,
   onZoomStateChange,
 }: StorageCanvasProps) {
   const forbiddenZoneRef = useRef<XYZone | null>(null);
@@ -240,6 +285,7 @@ function StorageCanvasInner({
     clearDragSession,
     startDragSession,
     dragGrabOffsetRef,
+    dragOverCmRef,
   } = useBoxDrag({
     boxes: dragBoxes,
     room: dragRoom,
@@ -351,6 +397,7 @@ function StorageCanvasInner({
       dragGrabOffsetRef,
       updateDragOverFromClientPos,
       commitBoxDrop,
+      dragOverCmRef,
       clearDragSession,
     },
     boxes: dragBoxes,
@@ -366,8 +413,9 @@ function StorageCanvasInner({
       onMoveLayoutLabel: (id: string, x: number, y: number) => {
         onMoveLayoutLabel?.(id, x, y);
       },
+      onTemplatePlaced,
     }),
-    [onMovePartition, onMoveLayoutLabel],
+    [onMovePartition, onMoveLayoutLabel, onTemplatePlaced],
   );
 
   const {
@@ -380,6 +428,12 @@ function StorageCanvasInner({
     handleGridDragLeave: handleLayoutGridDragLeave,
     handleGridDrop: handleLayoutGridDrop,
     setHoveredItemId: setHoveredLayoutItemId,
+    dragGrabOffsetRef: layoutDragGrabOffsetRef,
+    dragOverCmRef: layoutDragOverCmRef,
+    updateDragOverFromClientPos: updateLayoutDragOverFromClientPos,
+    commitLayoutDrop,
+    startDragSession: startLayoutDragSession,
+    clearDragSession: clearLayoutDragSession,
   } = useLayoutDrag({
     room: { widthCm: roomWcm, depthCm: roomHcm },
     partitions: partitions.map((p) => ({
@@ -389,6 +443,19 @@ function StorageCanvasInner({
     })),
     callbacks: layoutDragCallbacks,
     gridRef,
+  });
+
+  const layoutPointerDrag = useLayoutPointerDrag({
+    enabled: usePointerDrag,
+    layoutEditMode,
+    dragState: {
+      startDragSession: startLayoutDragSession,
+      dragGrabOffsetRef: layoutDragGrabOffsetRef,
+      updateDragOverFromClientPos: updateLayoutDragOverFromClientPos,
+      commitLayoutDrop,
+      dragOverCmRef: layoutDragOverCmRef,
+      clearDragSession: clearLayoutDragSession,
+    },
   });
 
   const stacks = useMemo(() => computeStacks(placedBoxDims), [placedBoxDims]);
@@ -537,6 +604,31 @@ function StorageCanvasInner({
     [setHoveredBoxId],
   );
 
+  const getTemplateOffsetPx = useCallback(
+    (item: LayoutDragItem) => {
+      if (effScale <= 0) return undefined;
+      if (item.kind === "template-partition") {
+        return {
+          pxX: (DEFAULT_PART_WIDTH * effScale) / 2,
+          pxY: (DEFAULT_PART_DEPTH * effScale) / 2,
+        };
+      }
+      if (item.kind === "template-label") {
+        return { pxX: 0, pxY: 0 };
+      }
+      return undefined;
+    },
+    [effScale],
+  );
+
+  const handleTemplateDragStart = useCallback(
+    (e: React.DragEvent, item: LayoutDragItem) => {
+      const offset = getTemplateOffsetPx(item);
+      handleLayoutDragStart(e, item, offset);
+    },
+    [getTemplateOffsetPx, handleLayoutDragStart],
+  );
+
   const handleCanvasDragOver = useCallback(
     (e: React.DragEvent) => {
       if (layoutEditMode) handleLayoutGridDragOver(e);
@@ -557,6 +649,8 @@ function StorageCanvasInner({
     (e: React.DragEvent) => {
       const data = e.dataTransfer.getData("text/plain");
       if (
+        data === LAYOUT_TEMPLATE_PARTITION ||
+        data === LAYOUT_TEMPLATE_LABEL ||
         data.startsWith(LAYOUT_PARTITION_PREFIX) ||
         data.startsWith(LAYOUT_LABEL_PREFIX)
       ) {
@@ -571,18 +665,59 @@ function StorageCanvasInner({
   const anyLayoutDragActive = draggedLayoutItem !== null;
 
   const isInteracting =
-    isPinchActive || pointerDrag.isPointerDragging || draggedBoxId !== null;
+    isPinchActive ||
+    pointerDrag.isPointerDragging ||
+    layoutPointerDrag.isPointerDragging ||
+    draggedBoxId !== null ||
+    draggedLayoutItem !== null;
 
   const blockViewportTouchScroll =
-    editMode &&
+    (editMode &&
+      usePointerDrag &&
+      (pointerDrag.isTouchHoldActive ||
+        pointerDrag.isPointerDragging ||
+        draggedBoxId !== null)) ||
+    (layoutEditMode &&
+      usePointerDrag &&
+      (layoutPointerDrag.isTouchHoldActive ||
+        layoutPointerDrag.isPointerDragging ||
+        draggedLayoutItem !== null));
+
+  const allowTouchPan =
     usePointerDrag &&
-    (pointerDrag.isTouchHoldActive ||
-      pointerDrag.isPointerDragging ||
-      draggedBoxId !== null);
+    (!editMode ||
+      (!pointerDrag.isTouchHoldActive &&
+        !pointerDrag.isPointerDragging &&
+        draggedBoxId === null)) &&
+    (!layoutEditMode ||
+      (!layoutPointerDrag.isTouchHoldActive &&
+        !layoutPointerDrag.isPointerDragging &&
+        draggedLayoutItem === null));
 
   useEffect(() => {
     onDragMetaChange({ draggedBoxId, hoveredBoxId, isStagingDragOver });
   }, [draggedBoxId, hoveredBoxId, isStagingDragOver, onDragMetaChange]);
+
+  useEffect(() => {
+    onLayoutDragMetaChange?.({
+      draggedLayoutItem,
+      touchHoldTemplate: layoutPointerDrag.touchHoldTemplate,
+      isTouchHoldActive: layoutPointerDrag.isTouchHoldActive,
+      isPointerDragging: layoutPointerDrag.isPointerDragging,
+    });
+  }, [
+    draggedLayoutItem,
+    layoutPointerDrag.touchHoldTemplate,
+    layoutPointerDrag.isTouchHoldActive,
+    layoutPointerDrag.isPointerDragging,
+    onLayoutDragMetaChange,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      layoutDragApiRef.current = null;
+    };
+  }, [layoutDragApiRef]);
 
   dragApiRef.current = {
     draggedBoxId,
@@ -597,8 +732,21 @@ function StorageCanvasInner({
     handleDragEnd,
     handleStagingCardDragStart,
     onBoxPointerDown: pointerDrag.onBoxPointerDown,
+    consumeClickSuppression: pointerDrag.consumeClickSuppression,
     setHoveredBoxId,
     getStagingOffsetPx,
+  };
+
+  layoutDragApiRef.current = {
+    draggedLayoutItem,
+    touchHoldTemplate: layoutPointerDrag.touchHoldTemplate,
+    isTouchHoldActive: layoutPointerDrag.isTouchHoldActive,
+    isPointerDragging: layoutPointerDrag.isPointerDragging,
+    handleTemplateDragStart,
+    handleLayoutDragEnd,
+    onLayoutTemplatePointerDown: layoutPointerDrag.onLayoutTemplatePointerDown,
+    getTemplateOffsetPx,
+    consumeClickSuppression: layoutPointerDrag.consumeClickSuppression,
   };
 
   return (
@@ -617,7 +765,7 @@ function StorageCanvasInner({
         refitKey={refitKey}
         panningDisabled={blockViewportTouchScroll}
         pinchDisabled={blockViewportTouchScroll}
-        allowTouchPan={usePointerDrag && !editMode}
+        allowTouchPan={allowTouchPan}
         isFullscreen={isFullscreen}
         spaceHeld={spaceHeld}
         isInteracting={isInteracting}
@@ -745,6 +893,29 @@ function StorageCanvasInner({
             layoutDragOverCm &&
             draggedLayoutItem &&
             (() => {
+              if (draggedLayoutItem.kind === "template-partition") {
+                return (
+                  <LayoutDragGhost
+                    kind="partition"
+                    width={DEFAULT_PART_WIDTH}
+                    depth={DEFAULT_PART_DEPTH}
+                    dragOverCm={layoutDragOverCm}
+                    room={{ widthCm: roomWcm, depthCm: roomHcm }}
+                  />
+                );
+              }
+              if (draggedLayoutItem.kind === "template-label") {
+                return (
+                  <LayoutDragGhost
+                    kind="label"
+                    text={DEFAULT_LABEL_TEXT}
+                    width={0}
+                    depth={0}
+                    dragOverCm={layoutDragOverCm}
+                    room={{ widthCm: roomWcm, depthCm: roomHcm }}
+                  />
+                );
+              }
               if (draggedLayoutItem.kind === "partition") {
                 const p = partitions.find(
                   (part) => part.id === draggedLayoutItem.id,
@@ -795,12 +966,14 @@ function StorageCanvasInner({
                   id={p.id}
                   label={p.label}
                   layoutEditMode
+                  usePointerDrag={usePointerDrag}
                   isDragging={isDragging}
                   isHovered={isHovered}
                   anyDragActive={anyLayoutDragActive}
                   style={style}
                   onDragStart={handleLayoutDragStart}
                   onDragEnd={handleLayoutDragEnd}
+                  onPointerDown={layoutPointerDrag.onLayoutPointerDown}
                   onMouseEnter={() => setHoveredLayoutItemId(p.id)}
                   onMouseLeave={() => setHoveredLayoutItemId(null)}
                 />
@@ -834,12 +1007,14 @@ function StorageCanvasInner({
                   text={l.text}
                   fontSize={l.fontSize}
                   layoutEditMode
+                  usePointerDrag={usePointerDrag}
                   isDragging={isDragging}
                   isHovered={isHovered}
                   anyDragActive={anyLayoutDragActive}
                   style={style}
                   onDragStart={handleLayoutDragStart}
                   onDragEnd={handleLayoutDragEnd}
+                  onPointerDown={layoutPointerDrag.onLayoutPointerDown}
                   onMouseEnter={() => setHoveredLayoutItemId(l.id)}
                   onMouseLeave={() => setHoveredLayoutItemId(null)}
                 />

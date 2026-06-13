@@ -1,86 +1,63 @@
 import { useRef, useCallback, useEffect, useState } from "react";
-import { computeSettleUpdates, type PlacedBoxDims } from "./boxPlacement";
 import {
   POINTER_DRAG_LONG_PRESS_MS,
   POINTER_DRAG_MOVE_CANCEL_PX,
   distancePx,
 } from "./boxDragCoords";
-import type { BoxDragState } from "./useBoxDrag";
+import {
+  isLayoutTemplateItem,
+  layoutDragItemKey,
+  type LayoutDragItem,
+} from "./useLayoutDrag";
+import type { LayoutDragState } from "./useLayoutDrag";
 
-export interface BoxPointerDragHandlers {
-  onBoxPointerDown: (
+export interface LayoutPointerDragHandlers {
+  onLayoutPointerDown: (e: React.PointerEvent, item: LayoutDragItem) => void;
+  onLayoutTemplatePointerDown: (
     e: React.PointerEvent,
-    boxId: string,
-    fromCanvas?: boolean,
+    item: LayoutDragItem,
     overrideOffsetPx?: { pxX: number; pxY: number },
   ) => void;
-  consumeClickSuppression: () => boolean;
   isPointerDragging: boolean;
   isTouchHoldActive: boolean;
-  touchHoldBoxId: string | null;
+  touchHoldItemId: string | null;
+  touchHoldTemplate: string | null;
+  consumeClickSuppression: () => boolean;
 }
 
 interface PendingPointerDrag {
-  boxId: string;
+  item: LayoutDragItem;
   pointerId: number;
   startX: number;
   startY: number;
-  fromCanvas: boolean;
-  overrideOffsetPx?: { pxX: number; pxY: number };
   target: HTMLElement;
+  overrideOffsetPx?: { pxX: number; pxY: number };
 }
 
-interface UseBoxPointerDragOptions {
+interface UseLayoutPointerDragOptions {
   enabled: boolean;
-  editMode: boolean;
+  layoutEditMode: boolean;
   dragState: Pick<
-    BoxDragState,
+    LayoutDragState,
     | "startDragSession"
     | "dragGrabOffsetRef"
     | "updateDragOverFromClientPos"
-    | "commitBoxDrop"
+    | "commitLayoutDrop"
     | "dragOverCmRef"
     | "clearDragSession"
   >;
-  boxes: Array<{
-    id: string;
-    x?: number;
-    y?: number;
-    z?: number;
-    sizeW: number;
-    sizeD: number;
-    sizeH: number;
-  }>;
-  onMoveBox: (
-    boxId: string,
-    newX?: number,
-    newY?: number,
-    newZ?: number,
-  ) => void;
-  partitions?: unknown[];
 }
 
-function isPlacedBox(b: {
-  x?: number;
-  y?: number;
-  z?: number;
-}): b is { x: number; y: number; z: number } {
-  return b.x !== undefined && b.y !== undefined && b.z !== undefined;
-}
-
-export function useBoxPointerDrag({
+export function useLayoutPointerDrag({
   enabled,
-  editMode,
+  layoutEditMode,
   dragState,
-  boxes,
-  onMoveBox,
-  partitions = [],
-}: UseBoxPointerDragOptions): BoxPointerDragHandlers {
+}: UseLayoutPointerDragOptions): LayoutPointerDragHandlers {
   const {
     startDragSession,
     dragGrabOffsetRef,
     updateDragOverFromClientPos,
-    commitBoxDrop,
+    commitLayoutDrop,
     dragOverCmRef,
     clearDragSession,
   } = dragState;
@@ -88,16 +65,19 @@ export function useBoxPointerDrag({
   const pendingRef = useRef<PendingPointerDrag | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeDragRef = useRef<{
-    boxId: string;
+    item: LayoutDragItem;
     pointerId: number;
     target: HTMLElement;
   } | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const windowCleanupRef = useRef<(() => void) | null>(null);
+  const suppressClickRef = useRef(false);
   const [isPointerDragging, setIsPointerDragging] = useState(false);
   const [isTouchHoldActive, setIsTouchHoldActive] = useState(false);
-  const [touchHoldBoxId, setTouchHoldBoxId] = useState<string | null>(null);
-  const suppressClickRef = useRef(false);
+  const [touchHoldItemId, setTouchHoldItemId] = useState<string | null>(null);
+  const [touchHoldTemplate, setTouchHoldTemplate] = useState<string | null>(
+    null,
+  );
 
   const clearLongPressTimer = useCallback(() => {
     if (longPressTimerRef.current !== null) {
@@ -120,6 +100,12 @@ export function useBoxPointerDrag({
     windowCleanupRef.current = null;
   }, []);
 
+  const clearTouchHoldVisuals = useCallback(() => {
+    setIsTouchHoldActive(false);
+    setTouchHoldItemId(null);
+    setTouchHoldTemplate(null);
+  }, []);
+
   const cancelPendingDrag = useCallback(
     (pointerId: number) => {
       clearLongPressTimer();
@@ -134,10 +120,14 @@ export function useBoxPointerDrag({
       if (activePointerIdRef.current === pointerId) {
         activePointerIdRef.current = null;
       }
-      setIsTouchHoldActive(false);
-      setTouchHoldBoxId(null);
+      clearTouchHoldVisuals();
     },
-    [clearLongPressTimer, detachWindowListeners, releaseCapture],
+    [
+      clearLongPressTimer,
+      clearTouchHoldVisuals,
+      detachWindowListeners,
+      releaseCapture,
+    ],
   );
 
   const endTouchSession = useCallback(
@@ -161,12 +151,12 @@ export function useBoxPointerDrag({
       if (activePointerIdRef.current === pointerId) {
         activePointerIdRef.current = null;
       }
-      setIsTouchHoldActive(false);
-      setTouchHoldBoxId(null);
+      clearTouchHoldVisuals();
     },
     [
       clearDragSession,
       clearLongPressTimer,
+      clearTouchHoldVisuals,
       detachWindowListeners,
       releaseCapture,
     ],
@@ -182,56 +172,37 @@ export function useBoxPointerDrag({
     (pending: PendingPointerDrag) => {
       clearLongPressTimer();
       pendingRef.current = null;
-      setTouchHoldBoxId(null);
+      clearTouchHoldVisuals();
       suppressClickRef.current = true;
 
       pending.target.setPointerCapture(pending.pointerId);
 
       if (pending.overrideOffsetPx) {
         dragGrabOffsetRef.current = pending.overrideOffsetPx;
-      } else if (pending.fromCanvas) {
+      } else {
         const rect = pending.target.getBoundingClientRect();
         dragGrabOffsetRef.current = {
           pxX: pending.startX - rect.left,
           pxY: pending.startY - rect.top,
         };
-      } else {
-        dragGrabOffsetRef.current = { pxX: 0, pxY: 0 };
       }
 
       activeDragRef.current = {
-        boxId: pending.boxId,
+        item: pending.item,
         pointerId: pending.pointerId,
         target: pending.target,
       };
       setIsPointerDragging(true);
-      startDragSession(pending.boxId, pending.startX, pending.startY);
+      startDragSession(pending.item, pending.startX, pending.startY);
       updateDragOverFromClientPos(pending.startX, pending.startY);
     },
     [
       clearLongPressTimer,
+      clearTouchHoldVisuals,
       dragGrabOffsetRef,
       startDragSession,
       updateDragOverFromClientPos,
     ],
-  );
-
-  const commitStagingDrop = useCallback(
-    (boxId: string) => {
-      const box = boxes.find((b) => b.id === boxId);
-      if (!box || !isPlacedBox(box)) return;
-      onMoveBox(boxId, undefined, undefined, undefined);
-      const placedBoxes = boxes.filter(isPlacedBox) as PlacedBoxDims[];
-      const newPlaced = placedBoxes.filter((b) => b.id !== boxId);
-      for (const u of computeSettleUpdates(
-        box as PlacedBoxDims,
-        newPlaced,
-        partitions as Parameters<typeof computeSettleUpdates>[2],
-      )) {
-        onMoveBox(u.id, u.x, u.y, u.z);
-      }
-    },
-    [boxes, onMoveBox, partitions],
   );
 
   const attachWindowListeners = useCallback(
@@ -284,25 +255,17 @@ export function useBoxPointerDrag({
         activeDragRef.current = null;
         setIsPointerDragging(false);
         activePointerIdRef.current = null;
-        setIsTouchHoldActive(false);
-        setTouchHoldBoxId(null);
+        clearTouchHoldVisuals();
         detachWindowListeners();
         clearLongPressTimer();
         pendingRef.current = null;
 
-        const box = boxes.find((b) => b.id === active.boxId);
-        const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-        const isOverStaging = dropTarget?.closest("[data-staging-drop-zone]");
-        if (isOverStaging && box && isPlacedBox(box)) {
-          commitStagingDrop(active.boxId);
-        } else {
-          commitBoxDrop(
-            active.boxId,
-            e.clientX,
-            e.clientY,
-            dragOverCmRef.current,
-          );
-        }
+        commitLayoutDrop(
+          active.item,
+          e.clientX,
+          e.clientY,
+          dragOverCmRef.current,
+        );
         clearDragSession();
       };
 
@@ -324,9 +287,8 @@ export function useBoxPointerDrag({
       cancelPendingDrag,
       clearDragSession,
       clearLongPressTimer,
-      boxes,
-      commitBoxDrop,
-      commitStagingDrop,
+      clearTouchHoldVisuals,
+      commitLayoutDrop,
       detachWindowListeners,
       dragOverCmRef,
       endTouchSession,
@@ -342,14 +304,13 @@ export function useBoxPointerDrag({
     };
   }, [clearLongPressTimer, detachWindowListeners]);
 
-  const onBoxPointerDown = useCallback(
+  const startPointerHold = useCallback(
     (
       e: React.PointerEvent,
-      boxId: string,
-      fromCanvas = false,
+      item: LayoutDragItem,
       overrideOffsetPx?: { pxX: number; pxY: number },
     ) => {
-      if (!enabled || !editMode || e.pointerType !== "touch") return;
+      if (!enabled || !layoutEditMode || e.pointerType !== "touch") return;
       if (e.button !== 0) return;
 
       if (activePointerIdRef.current !== null) {
@@ -362,16 +323,21 @@ export function useBoxPointerDrag({
 
       activePointerIdRef.current = e.pointerId;
       setIsTouchHoldActive(true);
-      setTouchHoldBoxId(boxId);
+      if (isLayoutTemplateItem(item)) {
+        setTouchHoldTemplate(layoutDragItemKey(item));
+        setTouchHoldItemId(null);
+      } else {
+        setTouchHoldItemId(item.id);
+        setTouchHoldTemplate(null);
+      }
 
       pendingRef.current = {
-        boxId,
+        item,
         pointerId: e.pointerId,
         startX: e.clientX,
         startY: e.clientY,
-        fromCanvas,
-        overrideOffsetPx,
         target,
+        overrideOffsetPx,
       };
 
       attachWindowListeners(e.pointerId);
@@ -386,22 +352,37 @@ export function useBoxPointerDrag({
     [
       attachWindowListeners,
       beginPointerDrag,
-      editMode,
       enabled,
       endTouchSession,
+      layoutEditMode,
     ],
   );
 
+  const onLayoutPointerDown = useCallback(
+    (e: React.PointerEvent, item: LayoutDragItem) => {
+      startPointerHold(e, item);
+    },
+    [startPointerHold],
+  );
+
+  const onLayoutTemplatePointerDown = useCallback(
+    (
+      e: React.PointerEvent,
+      item: LayoutDragItem,
+      overrideOffsetPx?: { pxX: number; pxY: number },
+    ) => {
+      startPointerHold(e, item, overrideOffsetPx);
+    },
+    [startPointerHold],
+  );
+
   return {
-    onBoxPointerDown,
-    consumeClickSuppression,
+    onLayoutPointerDown,
+    onLayoutTemplatePointerDown,
     isPointerDragging,
     isTouchHoldActive,
-    touchHoldBoxId,
+    touchHoldItemId,
+    touchHoldTemplate,
+    consumeClickSuppression,
   };
-}
-
-export function shouldUsePointerBoxDrag(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(pointer: coarse)").matches;
 }

@@ -26,7 +26,7 @@ export function LayoutDragGhost({
   if (kind === "partition") {
     return (
       <div
-        className="absolute pointer-events-none border-2 border-dashed border-slate-600 bg-slate-400/30 rounded-sm z-50"
+        className="absolute pointer-events-none border-2 border-dashed border-slate-600 dark:border-slate-200 bg-slate-400/30 dark:bg-slate-300/45 rounded-sm z-50"
         style={{
           left: `${(pos.xCm / room.widthCm) * 100}%`,
           top: `${(pos.yCm / room.depthCm) * 100}%`,
@@ -38,7 +38,7 @@ export function LayoutDragGhost({
   }
   return (
     <div
-      className="absolute pointer-events-none text-foreground/70 font-medium whitespace-nowrap z-50 outline outline-2 outline-dashed outline-primary/40 rounded px-1"
+      className="absolute pointer-events-none text-foreground/70 dark:text-foreground/90 font-medium whitespace-nowrap z-50 outline outline-2 outline-dashed outline-primary/40 dark:outline-primary rounded px-1"
       style={{
         left: `${(pos.xCm / room.widthCm) * 100}%`,
         top: `${(pos.yCm / room.depthCm) * 100}%`,
