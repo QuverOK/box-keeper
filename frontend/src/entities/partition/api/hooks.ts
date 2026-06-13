@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/shared/api/client";
-import { STORAGES_KEY } from "@/shared/api/query-keys";
+import { api, STORAGES_KEY } from "@/shared/api";
 import type { Partition } from "@/shared/model";
 interface CreatePartitionInput {
   x: number;

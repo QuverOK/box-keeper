@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/client";
+import { api } from "@/shared/api";
 import type { Box } from "../model/types";
 export interface PublicBoxResponse {
   box: Box;

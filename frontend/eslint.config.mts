@@ -11,7 +11,7 @@ export default defineConfig([
   {
     settings: {
       react: {
-        version: "18.3",
+        version: "detect",
       },
     },
   },
@@ -39,9 +39,9 @@ export default defineConfig([
     rules: {
       "react/prop-types": "off",
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "error",
       "react-refresh/only-export-components": [
-        "warn",
+        "error",
         { allowConstantExport: true },
       ],
     },

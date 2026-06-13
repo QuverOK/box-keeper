@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/shared/api/client";
-import { BOXES_KEY, ITEMS_KEY, STORAGES_KEY } from "@/shared/api/query-keys";
+import { api, BOXES_KEY, ITEMS_KEY, STORAGES_KEY } from "@/shared/api";
 import type { Item } from "../model/types";
 function invalidateItemRelatedQueries(
   qc: ReturnType<typeof useQueryClient>,

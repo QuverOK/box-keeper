@@ -4,9 +4,19 @@ import {
   ForbiddenException,
   ConflictException,
 } from "@nestjs/common";
+import { Prisma, Storage } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateStorageDto } from "./dto/create-storage.dto";
 import { UpdateStorageDto } from "./dto/update-storage.dto";
+
+export type StorageWithRelations = Prisma.StorageGetPayload<{
+  include: {
+    boxes: { include: { items: true } };
+    partitions: true;
+    layoutLabels: true;
+  };
+}>;
+
 @Injectable()
 export class StoragesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -21,7 +31,7 @@ export class StoragesService {
       roomDepth: number;
       roomHeight: number;
     },
-  ) {
+  ): void {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
     const roomHcm = storage.roomHeight * 100;
@@ -35,13 +45,20 @@ export class StoragesService {
       );
     }
   }
-  async create(userId: string, dto: CreateStorageDto) {
+  async create(
+    userId: string,
+    dto: CreateStorageDto,
+  ): Promise<StorageWithRelations> {
     return this.prisma.storage.create({
       data: { ...dto, userId },
-      include: { boxes: true },
+      include: {
+        boxes: { include: { items: true } },
+        partitions: true,
+        layoutLabels: true,
+      },
     });
   }
-  async findAll(userId: string) {
+  async findAll(userId: string): Promise<StorageWithRelations[]> {
     return this.prisma.storage.findMany({
       where: { userId },
       include: {
@@ -52,7 +69,7 @@ export class StoragesService {
       orderBy: { createdAt: "desc" },
     });
   }
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string): Promise<StorageWithRelations> {
     const storage = await this.prisma.storage.findUnique({
       where: { id },
       include: {
@@ -65,7 +82,11 @@ export class StoragesService {
     if (storage.userId !== userId) throw new ForbiddenException();
     return storage;
   }
-  async update(id: string, userId: string, dto: UpdateStorageDto) {
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateStorageDto,
+  ): Promise<StorageWithRelations> {
     const storage = await this.findOne(id, userId);
     const nextRoom = {
       roomWidth: dto.roomWidth ?? storage.roomWidth,
@@ -89,7 +110,7 @@ export class StoragesService {
       },
     });
   }
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string): Promise<Storage> {
     await this.findOne(id, userId);
     return this.prisma.storage.delete({ where: { id } });
   }

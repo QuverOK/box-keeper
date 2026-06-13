@@ -9,10 +9,17 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
+import { Item, Prisma } from "../generated/prisma/client";
 import { ItemsService } from "./items.service";
 import { CreateItemDto } from "./dto/create-item.dto";
 import { UpdateItemDto } from "./dto/update-item.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { AuthenticatedRequest } from "../auth/auth-user";
+
+type ItemWithBoxAndStorage = Prisma.ItemGetPayload<{
+  include: { box: { include: { storage: true } } };
+}>;
+
 @UseGuards(JwtAuthGuard)
 @Controller()
 export class ItemsController {
@@ -22,10 +29,10 @@ export class ItemsController {
     @Param("boxId")
     boxId: string,
     @Request()
-    req,
+    req: AuthenticatedRequest,
     @Body()
     dto: CreateItemDto,
-  ) {
+  ): Promise<Item> {
     return this.itemsService.create(boxId, req.user.id, dto);
   }
   @Get("boxes/:boxId/items")
@@ -33,8 +40,8 @@ export class ItemsController {
     @Param("boxId")
     boxId: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<Item[]> {
     return this.itemsService.findAll(boxId, req.user.id);
   }
   @Get("items/:id")
@@ -42,8 +49,8 @@ export class ItemsController {
     @Param("id")
     id: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<ItemWithBoxAndStorage> {
     return this.itemsService.findOne(id, req.user.id);
   }
   @Patch("items/:id")
@@ -51,10 +58,10 @@ export class ItemsController {
     @Param("id")
     id: string,
     @Request()
-    req,
+    req: AuthenticatedRequest,
     @Body()
     dto: UpdateItemDto,
-  ) {
+  ): Promise<Item> {
     return this.itemsService.update(id, req.user.id, dto);
   }
   @Delete("items/:id")
@@ -62,8 +69,8 @@ export class ItemsController {
     @Param("id")
     id: string,
     @Request()
-    req,
-  ) {
+    req: AuthenticatedRequest,
+  ): Promise<Item> {
     return this.itemsService.remove(id, req.user.id);
   }
 }

@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { fetchPublicBoxByQr } from "@/entities/box/api/public-hooks";
+import { fetchPublicBoxByQr } from "@/entities/box";
 import { normalizeApiError } from "@/shared/api/errors";
 import {
   createQrLabelDataUrl,

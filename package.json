@@ -1,0 +1,9 @@
+{
+  "name": "boxkeeper",
+  "private": true,
+  "scripts": {
+    "ci": "npm run ci:frontend && npm run ci:backend",
+    "ci:frontend": "npm --prefix frontend run ci",
+    "ci:backend": "npm --prefix backend run ci"
+  }
+}

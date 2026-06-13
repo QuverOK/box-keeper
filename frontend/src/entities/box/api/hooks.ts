@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/shared/api/client";
-import { BOXES_KEY, STORAGES_KEY } from "@/shared/api/query-keys";
+import { api, BOXES_KEY, STORAGES_KEY } from "@/shared/api";
 import type { Box } from "../model/types";
 export function useBoxes(storageId: string) {
   return useQuery<Box[]>({

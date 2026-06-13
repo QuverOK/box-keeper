@@ -5,7 +5,8 @@ import {
   Param,
   Query,
 } from "@nestjs/common";
-import { PublicService } from "./public.service";
+import { PublicBoxResponse, PublicService } from "./public.service";
+
 @Controller("public")
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
@@ -13,7 +14,7 @@ export class PublicController {
   findBoxByQrQuery(
     @Query("code")
     qrCode: string,
-  ) {
+  ): Promise<PublicBoxResponse> {
     if (!qrCode?.trim()) {
       throw new BadRequestException("Не указан QR-код");
     }
@@ -23,14 +24,14 @@ export class PublicController {
   findBoxByQr(
     @Param("qrCode")
     qrCode: string,
-  ) {
+  ): Promise<PublicBoxResponse> {
     return this.publicService.findBoxByQrCode(decodeURIComponent(qrCode));
   }
   @Get("storages/:id")
   findStorage(
     @Param("id")
     id: string,
-  ) {
+  ): ReturnType<PublicService["findStoragePublic"]> {
     return this.publicService.findStoragePublic(id);
   }
 }

@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Box, User, QrCode, Moon, Sun, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "./ui/button";
-import { useUserStore } from "@/entities/user/model/store";
+import { useUserStore } from "@/entities/user";
 const navBtnVariants = {
   rest: { scale: 1 },
   hover: { scale: 1.1 },

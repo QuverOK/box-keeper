@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from "@nestjs/common";
+import { Partition } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreatePartitionDto } from "./dto/create-partition.dto";
@@ -27,7 +28,7 @@ export class PartitionsService {
       roomDepth: number;
       roomHeight: number;
     },
-  ) {
+  ): void {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
     const roomHcm = storage.roomHeight * 100;
@@ -42,21 +43,29 @@ export class PartitionsService {
       throw new ConflictException("Перегородка выходит за пределы помещения");
     }
   }
-  async create(storageId: string, userId: string, dto: CreatePartitionDto) {
+  async create(
+    storageId: string,
+    userId: string,
+    dto: CreatePartitionDto,
+  ): Promise<Partition> {
     const storage = await this.storagesService.findOne(storageId, userId);
     this.assertFitsStorage(dto, storage);
     return this.prisma.partition.create({
       data: { ...dto, storageId },
     });
   }
-  async findAll(storageId: string, userId: string) {
+  async findAll(storageId: string, userId: string): Promise<Partition[]> {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.partition.findMany({
       where: { storageId },
       orderBy: { createdAt: "asc" },
     });
   }
-  async update(id: string, userId: string, dto: UpdatePartitionDto) {
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdatePartitionDto,
+  ): Promise<Partition> {
     const existing = await this.prisma.partition.findUnique({
       where: { id },
       include: { storage: true },
@@ -74,7 +83,7 @@ export class PartitionsService {
     this.assertFitsStorage(merged, existing.storage);
     return this.prisma.partition.update({ where: { id }, data: dto });
   }
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string): Promise<Partition> {
     const existing = await this.prisma.partition.findUnique({
       where: { id },
     });

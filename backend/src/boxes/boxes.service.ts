@@ -4,11 +4,18 @@ import {
   ForbiddenException,
   ConflictException,
 } from "@nestjs/common";
+import { Box, Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreateBoxDto } from "./dto/create-box.dto";
 import { UpdateBoxDto } from "./dto/update-box.dto";
 import { MoveBoxDto } from "./dto/move-box.dto";
+
+type BoxWithItems = Prisma.BoxGetPayload<{ include: { items: true } }>;
+type BoxWithItemsAndStorage = Prisma.BoxGetPayload<{
+  include: { items: true; storage: true };
+}>;
+
 function generateQrCode(storageId: string, boxName: string): string {
   const slug = boxName.replace(/\s+/g, "-").toUpperCase();
   return `BOX-${storageId.slice(0, 8)}-${slug}-${Date.now()}`;
@@ -23,7 +30,7 @@ export class BoxesService {
     storageId: string,
     name: string,
     excludeId?: string,
-  ) {
+  ): Promise<void> {
     const existing = await this.prisma.box.findFirst({
       where: {
         storageId,
@@ -46,7 +53,7 @@ export class BoxesService {
       roomDepth: number;
       roomHeight: number;
     },
-  ) {
+  ): void {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
     const roomHcm = storage.roomHeight * 100;
@@ -60,7 +67,11 @@ export class BoxesService {
       );
     }
   }
-  async create(storageId: string, userId: string, dto: CreateBoxDto) {
+  async create(
+    storageId: string,
+    userId: string,
+    dto: CreateBoxDto,
+  ): Promise<BoxWithItems> {
     const storage = await this.storagesService.findOne(storageId, userId);
     await this.assertUniqueName(storageId, dto.name);
     this.assertBoxFitsRoom(dto.sizeW, dto.sizeD, dto.sizeH, storage);
@@ -70,7 +81,7 @@ export class BoxesService {
       include: { items: true },
     });
   }
-  async findAll(storageId: string, userId: string) {
+  async findAll(storageId: string, userId: string): Promise<BoxWithItems[]> {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.box.findMany({
       where: { storageId },
@@ -78,7 +89,7 @@ export class BoxesService {
       orderBy: { createdAt: "asc" },
     });
   }
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string): Promise<BoxWithItemsAndStorage> {
     const box = await this.prisma.box.findUnique({
       where: { id },
       include: {
@@ -90,7 +101,11 @@ export class BoxesService {
     if (box.storage.userId !== userId) throw new ForbiddenException();
     return box;
   }
-  async update(id: string, userId: string, dto: UpdateBoxDto) {
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateBoxDto,
+  ): Promise<BoxWithItems> {
     const box = await this.findOne(id, userId);
     if (dto.name !== undefined) {
       await this.assertUniqueName(box.storageId, dto.name, id);
@@ -105,7 +120,11 @@ export class BoxesService {
       include: { items: true },
     });
   }
-  async move(id: string, userId: string, dto: MoveBoxDto) {
+  async move(
+    id: string,
+    userId: string,
+    dto: MoveBoxDto,
+  ): Promise<BoxWithItems> {
     await this.findOne(id, userId);
     return this.prisma.box.update({
       where: { id },
@@ -117,7 +136,7 @@ export class BoxesService {
       include: { items: true },
     });
   }
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string): Promise<Box> {
     await this.findOne(id, userId);
     return this.prisma.box.delete({ where: { id } });
   }

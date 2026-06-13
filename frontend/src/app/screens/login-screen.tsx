@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { LoginRegister } from "@/features/auth/ui/LoginRegister";
+import { LoginRegister } from "@/features/auth";
 export function LoginScreen() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" });

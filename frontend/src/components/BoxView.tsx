@@ -50,10 +50,12 @@ import {
   validateBoxFitsInRoom,
   isDuplicateBoxName,
 } from "@/features/box-validation";
-import { isColorTooDark } from "@/features/box-drag";
+import {
+  isColorTooDark,
+  AddItemsDialog,
+  type ItemInput,
+} from "@/widgets/storage-editor";
 import { CategoryCombobox } from "@/features/item-category";
-import { AddItemsDialog } from "@/features/bulk-items";
-import type { ItemInput } from "@/features/bulk-items";
 import {
   clampItemDescription,
   MAX_ITEM_DESCRIPTION_LENGTH,

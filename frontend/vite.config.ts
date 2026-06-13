@@ -53,6 +53,22 @@ export default defineConfig({
   build: {
     target: "esnext",
     outDir: "build",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@radix-ui")) return "radix";
+          if (id.includes("@tanstack")) return "tanstack";
+          if (id.includes("lucide-react")) return "lucide";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("html5-qrcode") || id.includes("/qrcode")) {
+            return "qrcode";
+          }
+          if (id.includes("react-dom") || id.includes("/react/"))
+            return "react";
+        },
+      },
+    },
   },
   server: {
     port: 3000,

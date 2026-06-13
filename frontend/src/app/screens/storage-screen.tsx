@@ -1,14 +1,13 @@
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { StorageView } from "@/widgets/storage-view";
+import { StorageView } from "@/widgets/storage-editor";
 import {
   useStorage,
   usePublicStorage,
   useUpdateStorage,
 } from "@/entities/storage";
 import { useCreateBox, useMoveAnyBox } from "@/entities/box";
-import { api } from "@/shared/api/client";
-import { BOXES_KEY, STORAGES_KEY } from "@/shared/api/query-keys";
+import { api, BOXES_KEY, STORAGES_KEY } from "@/shared/api";
 import {
   useCreatePartition,
   useDeletePartition,

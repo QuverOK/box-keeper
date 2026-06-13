@@ -13,9 +13,8 @@ import {
 } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Box, Check, QrCode, X } from "lucide-react";
-import { api } from "@/shared/api/client";
-import { normalizeApiError } from "@/shared/api/errors";
-import { useUserStore } from "@/entities/user/model/store";
+import { api, normalizeApiError } from "@/shared/api";
+import { useUserStore } from "@/entities/user";
 import type { AuthResponse } from "@/shared/model";
 import { validatePassword, passwordsMatch } from "../model/password";
 const checklistItemVariants = {
