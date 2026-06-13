@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { getTransparentDragImage } from "@/shared/lib/drag-image";
 import {
   computeSettleUpdates,
@@ -57,7 +57,13 @@ export interface BoxDragState {
   dragGrabOffsetRef: React.RefObject<{ pxX: number; pxY: number }>;
   gridRectRef: React.RefObject<GridRect | null>;
   updateDragOverFromClientPos: (clientX: number, clientY: number) => void;
-  commitBoxDrop: (boxId: string, clientX: number, clientY: number) => void;
+  commitBoxDrop: (
+    boxId: string,
+    clientX: number,
+    clientY: number,
+    cmOverride?: { xCm: number; yCm: number } | null,
+  ) => void;
+  dragOverCmRef: React.RefObject<{ xCm: number; yCm: number } | null>;
   clearDragSession: () => void;
   startDragSession: (boxId: string, clientX?: number, clientY?: number) => void;
 }
@@ -100,12 +106,17 @@ export function useBoxDrag({
   const gridRef = useRef<HTMLDivElement>(null);
   const dragGrabOffsetRef = useRef({ pxX: 0, pxY: 0 });
   const gridRectRef = useRef<GridRect | null>(null);
+  const dragOverCmRef = useRef<{ xCm: number; yCm: number } | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const pendingDragPosRef = useRef<{ xCm: number; yCm: number } | null>(null);
   const draggedBoxRef = useRef<(BoxDims & { x?: number; y?: number }) | null>(
     null,
   );
   const placedBoxes = boxes.filter(isPlacedBox);
+
+  useEffect(() => {
+    dragOverCmRef.current = dragOverCm;
+  }, [dragOverCm]);
 
   const refreshGridRect = useCallback(() => {
     if (!gridRef.current) {
@@ -195,24 +206,26 @@ export function useBoxDrag({
     pendingDragPosRef.current = null;
     draggedBoxRef.current = null;
     gridRectRef.current = null;
+    dragOverCmRef.current = null;
     setDraggedBoxId(null);
     setDragOverCm(null);
     setIsStagingDragOver(false);
   }, []);
 
   const commitBoxDrop = useCallback(
-    (boxId: string, clientX: number, clientY: number) => {
+    (
+      boxId: string,
+      clientX: number,
+      clientY: number,
+      cmOverride?: { xCm: number; yCm: number } | null,
+    ) => {
       const draggedBox = boxes.find((b) => b.id === boxId);
       if (!draggedBox) return;
       const rect = gridRectRef.current ?? refreshGridRect();
       if (!rect) return;
-      const raw = clientPosToCm(
-        clientX,
-        clientY,
-        rect,
-        dragGrabOffsetRef.current,
-        room,
-      );
+      const raw =
+        cmOverride ??
+        clientPosToCm(clientX, clientY, rect, dragGrabOffsetRef.current, room);
       if (
         forbiddenZoneRef?.current &&
         overlapsZone(raw.xCm, raw.yCm, draggedBox, forbiddenZoneRef.current)
@@ -377,6 +390,7 @@ export function useBoxDrag({
     gridRectRef,
     updateDragOverFromClientPos,
     commitBoxDrop,
+    dragOverCmRef,
     clearDragSession,
     startDragSession,
   };

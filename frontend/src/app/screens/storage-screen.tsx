@@ -136,6 +136,12 @@ export function StorageScreen() {
       onMoveLayoutLabel={async (id, x, y) => {
         await updateLayoutLabel.mutateAsync({ id, x, y });
       }}
+      onUpdatePartition={async (id, data) => {
+        await updatePartition.mutateAsync({ id, ...data });
+      }}
+      onUpdateLayoutLabel={async (id, data) => {
+        await updateLayoutLabel.mutateAsync({ id, ...data });
+      }}
       onUpdateStorage={async (data) => {
         await updateStorage.mutateAsync(data);
       }}

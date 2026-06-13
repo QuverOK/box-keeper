@@ -31,16 +31,16 @@ interface BoxDragGhostProps {
 
 const ghostTone = {
   conflict: {
-    bg: "bg-red-100 dark:bg-red-950/40",
-    ring: "ring-red-400 dark:ring-red-700",
+    bg: "bg-red-100 dark:bg-red-500/30",
+    ring: "ring-red-400 dark:ring-red-300",
   },
   stack: {
-    bg: "bg-green-100 dark:bg-green-950/40",
-    ring: "ring-green-400 dark:ring-green-700",
+    bg: "bg-green-100 dark:bg-green-500/30",
+    ring: "ring-green-400 dark:ring-green-300",
   },
   default: {
-    bg: "bg-blue-100 dark:bg-blue-950/40",
-    ring: "ring-blue-400 dark:ring-blue-700",
+    bg: "bg-blue-100 dark:bg-blue-500/30",
+    ring: "ring-blue-400 dark:ring-blue-300",
   },
 } as const;
 
@@ -122,7 +122,7 @@ export const BoxDragGhost = memo(function BoxDragGhost({
   return (
     <div
       className={cn(
-        "absolute z-50 pointer-events-none rounded-md ring-2 ring-dashed transition-none isolate flex items-center justify-center",
+        "absolute z-50 pointer-events-none rounded-md ring-2 ring-dashed transition-none isolate flex items-center justify-center opacity-75 dark:opacity-95",
         tone.bg,
         tone.ring,
       )}
@@ -131,7 +131,6 @@ export const BoxDragGhost = memo(function BoxDragGhost({
         top: `${topPct}%`,
         width: `${widthPct}%`,
         height: `${heightPct}%`,
-        opacity: 0.75,
         contain: "layout style paint",
       }}
     >

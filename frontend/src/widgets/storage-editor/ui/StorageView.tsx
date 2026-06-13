@@ -10,10 +10,12 @@ import {
   AlertCircle,
   Search,
   X,
+  Maximize2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/cn";
 const boxListVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.04 } },
@@ -38,7 +40,13 @@ import {
 import { Input } from "@/shared/ui/input";
 import { UnitInput } from "@/shared/ui/unit-input";
 import { Label } from "@/shared/ui/label";
-import React, { useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Storage3DView } from "./Storage3DView";
 import { AuthRequiredDialog } from "@/shared/ui/auth-required-dialog";
@@ -56,7 +64,13 @@ import {
 } from "../model/bulkItemTypes";
 import { BulkItemsForm } from "./BulkItemsForm";
 import { searchStorageBoxes, type StorageSearchResult } from "../model/search";
-import { LayoutEditControls } from "./LayoutEditControls";
+import {
+  LayoutEditControls,
+  type PendingTemplateDrop,
+} from "./LayoutEditControls";
+import type { LayoutDragItem } from "../model/useLayoutDrag";
+import { shouldUsePointerBoxDrag } from "../model/useBoxPointerDrag";
+import type { StorageCanvasLayoutDragApi } from "./StorageCanvas";
 import type { Partition, LayoutLabel } from "@/shared/model";
 interface BoxItem {
   id: string;
@@ -127,12 +141,32 @@ interface StorageViewProps {
     label?: string;
   }) => Promise<void>;
   onDeletePartition?: (id: string) => Promise<void>;
+  onUpdatePartition?: (
+    id: string,
+    data: {
+      x: number;
+      y: number;
+      z: number;
+      width: number;
+      depth: number;
+      height: number;
+      label?: string;
+    },
+  ) => Promise<void>;
   onCreateLayoutLabel?: (data: {
     x: number;
     y: number;
     text: string;
   }) => Promise<void>;
   onDeleteLayoutLabel?: (id: string) => Promise<void>;
+  onUpdateLayoutLabel?: (
+    id: string,
+    data: {
+      x: number;
+      y: number;
+      text: string;
+    },
+  ) => Promise<void>;
   onMovePartition?: (id: string, x: number, y: number) => void;
   onMoveLayoutLabel?: (id: string, x: number, y: number) => void;
   onUpdateStorage?: (data: {
@@ -158,8 +192,10 @@ export function StorageView({
   layoutLabels = [],
   onCreatePartition,
   onDeletePartition,
+  onUpdatePartition,
   onCreateLayoutLabel,
   onDeleteLayoutLabel,
+  onUpdateLayoutLabel,
   onMovePartition,
   onMoveLayoutLabel,
   onUpdateStorage,
@@ -192,6 +228,64 @@ export function StorageView({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [fullscreenDialogPortal, setFullscreenDialogPortal] =
+    useState<HTMLDivElement | null>(null);
+  const [fullscreenControl, setFullscreenControl] = useState<{
+    toggle: () => void;
+    isFullscreen: boolean;
+  } | null>(null);
+  const layoutDragApiRef = useRef<StorageCanvasLayoutDragApi | null>(null);
+  const [pendingTemplateDrop, setPendingTemplateDrop] =
+    useState<PendingTemplateDrop | null>(null);
+  const [layoutDragApi, setLayoutDragApi] =
+    useState<StorageCanvasLayoutDragApi | null>(null);
+  const [usePointerDrag, setUsePointerDrag] = useState(shouldUsePointerBoxDrag);
+  useEffect(() => {
+    const mql = window.matchMedia("(pointer: coarse)");
+    const onChange = () => setUsePointerDrag(mql.matches);
+    mql.addEventListener("change", onChange);
+    setUsePointerDrag(mql.matches);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  const handleLayoutDragMetaChange = useCallback(
+    (meta: {
+      draggedLayoutItem: LayoutDragItem | null;
+      touchHoldTemplate: string | null;
+      isTouchHoldActive: boolean;
+      isPointerDragging: boolean;
+    }) => {
+      const api = layoutDragApiRef.current;
+      setLayoutDragApi((prev) => {
+        if (!api) return null;
+        const next = { ...api, ...meta };
+        if (
+          prev &&
+          prev.draggedLayoutItem === next.draggedLayoutItem &&
+          prev.touchHoldTemplate === next.touchHoldTemplate &&
+          prev.isTouchHoldActive === next.isTouchHoldActive &&
+          prev.isPointerDragging === next.isPointerDragging
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    },
+    [],
+  );
+  const handleTemplatePlaced = useCallback(
+    (data: PendingTemplateDrop) => setPendingTemplateDrop(data),
+    [],
+  );
+  const handlePendingTemplateDropHandled = useCallback(
+    () => setPendingTemplateDrop(null),
+    [],
+  );
+  const handleFullscreenControlChange = useCallback(
+    (control: { toggle: () => void; isFullscreen: boolean } | null) => {
+      setFullscreenControl(control);
+    },
+    [],
+  );
   const [highlightedBoxId, setHighlightedBoxId] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchResults = useMemo<SearchResult[]>(() => {
@@ -665,7 +759,10 @@ export function StorageView({
                     </span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+                <DialogContent
+                  portalContainer={fullscreenDialogPortal}
+                  className="sm:max-w-lg max-h-[85vh] overflow-y-auto"
+                >
                   <DialogHeader>
                     <DialogTitle>Новая коробка</DialogTitle>
                     <DialogDescription>
@@ -852,15 +949,33 @@ export function StorageView({
                   onDeletePartition &&
                   onCreateLayoutLabel &&
                   onDeleteLayoutLabel && (
-                    <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+                    <div
+                      className={cn(
+                        "mb-4 p-3 border rounded-lg bg-muted/30",
+                        fullscreenControl?.isFullscreen && "hidden",
+                      )}
+                    >
                       <LayoutEditControls
                         partitions={partitions}
                         layoutLabels={layoutLabels}
                         roomSize={effectiveRoomSize}
                         onCreatePartition={onCreatePartition}
                         onDeletePartition={onDeletePartition}
+                        onUpdatePartition={onUpdatePartition}
                         onCreateLabel={onCreateLayoutLabel}
                         onDeleteLabel={onDeleteLayoutLabel}
+                        onUpdateLabel={onUpdateLayoutLabel}
+                        layoutDragApi={layoutDragApi}
+                        layoutEditMode={effectiveLayoutEditMode}
+                        usePointerDrag={usePointerDrag}
+                        pendingTemplateDrop={
+                          fullscreenControl?.isFullscreen
+                            ? null
+                            : pendingTemplateDrop
+                        }
+                        onPendingTemplateDropHandled={
+                          handlePendingTemplateDropHandled
+                        }
                       />
                     </div>
                   )}
@@ -879,6 +994,12 @@ export function StorageView({
                   layoutLabels={layoutLabels}
                   onMovePartition={onMovePartition}
                   onMoveLayoutLabel={onMoveLayoutLabel}
+                  onCreatePartition={onCreatePartition}
+                  onDeletePartition={onDeletePartition}
+                  onUpdatePartition={onUpdatePartition}
+                  onCreateLayoutLabel={onCreateLayoutLabel}
+                  onDeleteLayoutLabel={onDeleteLayoutLabel}
+                  onUpdateLayoutLabel={onUpdateLayoutLabel}
                   onToggleEditMode={() => void handleEditModeToggle()}
                   onToggleLayoutEditMode={() => {
                     if (readOnly) {
@@ -889,6 +1010,17 @@ export function StorageView({
                   }}
                   onAddBox={handleAddBoxClick}
                   isSavingStorage={isSavingStorage}
+                  onDialogPortalHostChange={setFullscreenDialogPortal}
+                  onFullscreenControlChange={handleFullscreenControlChange}
+                  layoutDragApiRef={layoutDragApiRef}
+                  onLayoutDragMetaChange={handleLayoutDragMetaChange}
+                  onTemplatePlaced={handleTemplatePlaced}
+                  pendingTemplateDrop={pendingTemplateDrop}
+                  onPendingTemplateDropHandled={
+                    handlePendingTemplateDropHandled
+                  }
+                  usePointerDrag={usePointerDrag}
+                  layoutDragApi={layoutDragApi}
                 />
               </>
             )}
@@ -976,6 +1108,16 @@ export function StorageView({
       </main>
 
       <div className="fixed bottom-4 right-4 z-40 flex flex-col gap-2 sm:hidden">
+        <Button
+          variant={fullscreenControl?.isFullscreen ? "default" : "outline"}
+          size="icon"
+          className="w-12 h-12 rounded-full shadow-lg"
+          onClick={() => fullscreenControl?.toggle()}
+          disabled={!fullscreenControl || fullscreenControl.isFullscreen}
+          aria-label="На весь экран"
+        >
+          <Maximize2 className="w-5 h-5" />
+        </Button>
         <Button
           size="icon"
           className="w-12 h-12 rounded-full shadow-lg"

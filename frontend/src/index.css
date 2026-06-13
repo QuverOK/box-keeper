@@ -203,6 +203,20 @@ html {
   touch-action: pan-x pinch-zoom;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
+  padding-bottom: 2px;
+}
+
+@media (pointer: coarse) {
+  .storage-staging-scroll {
+    scrollbar-width: none;
+    padding-bottom: 0.5rem;
+  }
+
+  .storage-staging-scroll::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
 }
 
 .storage-strip-scroll::-webkit-scrollbar,
