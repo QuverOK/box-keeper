@@ -1,11 +1,25 @@
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/shared/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog";
 interface AuthRequiredDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onConfirmLogin: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirmLogin: () => void;
 }
-export function AuthRequiredDialog({ open, onOpenChange, onConfirmLogin, }: AuthRequiredDialogProps) {
-    return (<AlertDialog open={open} onOpenChange={onOpenChange}>
+export function AuthRequiredDialog({
+  open,
+  onOpenChange,
+  onConfirmLogin,
+}: AuthRequiredDialogProps) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Требуется авторизация</AlertDialogTitle>
@@ -18,5 +32,6 @@ export function AuthRequiredDialog({ open, onOpenChange, onConfirmLogin, }: Auth
           <AlertDialogAction onClick={onConfirmLogin}>Войти</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>);
+    </AlertDialog>
+  );
 }
