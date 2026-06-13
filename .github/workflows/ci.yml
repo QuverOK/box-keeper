@@ -50,6 +50,8 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/boxkeeper?schema=public
     defaults:
       run:
         working-directory: backend

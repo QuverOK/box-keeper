@@ -66,6 +66,14 @@ cd frontend && npm ci
 cd ../backend && npm ci
 ```
 
+Для backend скопируйте переменные окружения (или создайте `backend/.env` по образцу `backend/.env.example`):
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+В `DATABASE_URL` укажите строку подключения к PostgreSQL. В CI используется placeholder-URL только для `prisma generate` и сборки — реальная БД в пайплайне не нужна.
+
 После этого `npm run ci` из корня можно запускать без перехода в подпапки.
 
 ## GitHub Actions и push в feature-ветки
