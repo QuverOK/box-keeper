@@ -67,3 +67,16 @@ cd ../backend && npm ci
 ```
 
 После этого `npm run ci` из корня можно запускать без перехода в подпапки.
+
+## GitHub Actions и push в feature-ветки
+
+Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) запускается при:
+
+- push в `main`, `master` и `feature/**`;
+- pull request в `main` / `master`.
+
+Обязательные статусы **Frontend** и **Backend** всегда выполняются оба (без path-filter), чтобы совпадать с правилами репозитория «2 of 2 required status checks».
+
+### Первый push в защищённую feature-ветку
+
+Если GitHub отклоняет push с ошибкой `GH013` / `2 of 2 required status checks are expected`, проверки ещё не могли запуститься на удалённой ветке. Один раз ослабьте правило в [настройках репозитория](https://github.com/QuverOK/box-keeper/rules): уберите требование статус-чеков **перед push** или включите bypass для администратора. После успешного push CI будет запускаться автоматически на каждый следующий коммит.
