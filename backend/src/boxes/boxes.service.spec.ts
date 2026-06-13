@@ -3,7 +3,6 @@ import { NotFoundException } from "@nestjs/common";
 import { BoxesService } from "./boxes.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
-
 const mockStorage = {
   id: "storage-1",
   userId: "user-1",
@@ -17,7 +16,6 @@ const mockStorage = {
   createdAt: new Date(),
   boxes: [],
 };
-
 const mockBox = {
   id: "box-1",
   name: "Инструменты",
@@ -34,10 +32,10 @@ const mockBox = {
   items: [],
   createdAt: new Date(),
 };
-
 const mockPrisma = {
   box: {
     create: jest.fn().mockResolvedValue(mockBox),
+    findFirst: jest.fn().mockResolvedValue(null),
     findMany: jest.fn().mockResolvedValue([mockBox]),
     findUnique: jest.fn().mockResolvedValue(mockBox),
     update: jest
@@ -46,14 +44,11 @@ const mockPrisma = {
     delete: jest.fn().mockResolvedValue(mockBox),
   },
 };
-
 const mockStoragesService = {
   findOne: jest.fn().mockResolvedValue(mockStorage),
 };
-
 describe("BoxesService", () => {
   let service: BoxesService;
-
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -63,14 +58,11 @@ describe("BoxesService", () => {
         { provide: StoragesService, useValue: mockStoragesService },
       ],
     }).compile();
-
     service = module.get<BoxesService>(BoxesService);
   });
-
   it("should be defined", () => {
     expect(service).toBeDefined();
   });
-
   it("creates a box in a storage", async () => {
     const result = await service.create("storage-1", "user-1", {
       name: "Инструменты",
@@ -84,7 +76,6 @@ describe("BoxesService", () => {
       "user-1",
     );
   });
-
   it("moves a box to a position", async () => {
     const result = await service.move("box-1", "user-1", {
       posX: 0,
@@ -95,7 +86,6 @@ describe("BoxesService", () => {
     expect(result.posY).toBe(0);
     expect(result.posZ).toBe(0);
   });
-
   it("unplaces a box by passing null position", async () => {
     mockPrisma.box.update.mockResolvedValueOnce({
       ...mockBox,
@@ -106,14 +96,12 @@ describe("BoxesService", () => {
     const result = await service.move("box-1", "user-1", {});
     expect(result.posX).toBeNull();
   });
-
   it("throws NotFoundException when box not found", async () => {
     mockPrisma.box.findUnique.mockResolvedValueOnce(null);
     await expect(service.findOne("missing", "user-1")).rejects.toThrow(
       NotFoundException,
     );
   });
-
   it("removes a box", async () => {
     const result = await service.remove("box-1", "user-1");
     expect(result.id).toBe("box-1");

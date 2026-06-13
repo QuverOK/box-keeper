@@ -20,16 +20,13 @@ import {
   useUpdateLayoutLabel,
 } from "@/entities/layout-label";
 import { stripGuestFromPath } from "../navigation";
-
 export function StorageScreen() {
   const { storageId } = useParams({ from: "/storage/$storageId" });
   const search = useSearch({ from: "/storage/$storageId" });
   const navigate = useNavigate();
   const qc = useQueryClient();
-
   const readOnly = search.guest === "1";
   const highlightBoxId = search.highlight;
-
   const { data: authStorage } = useStorage(readOnly ? "" : storageId);
   const { data: publicStorage } = usePublicStorage(readOnly ? storageId : "");
   const addBox = useCreateBox(storageId);
@@ -41,16 +38,13 @@ export function StorageScreen() {
   const createLayoutLabel = useCreateLayoutLabel(readOnly ? "" : storageId);
   const deleteLayoutLabel = useDeleteLayoutLabel(readOnly ? "" : storageId);
   const updateLayoutLabel = useUpdateLayoutLabel(readOnly ? "" : storageId);
-
   const storage = readOnly ? publicStorage : authStorage;
-
   const requireAuth = () => {
     const redirect = stripGuestFromPath(
       window.location.pathname + window.location.search,
     );
     navigate({ to: "/login", search: { redirect } });
   };
-
   if (!storage) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -58,7 +52,6 @@ export function StorageScreen() {
       </div>
     );
   }
-
   return (
     <StorageView
       storageName={storage.name}

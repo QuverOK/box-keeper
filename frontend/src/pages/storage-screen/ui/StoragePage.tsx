@@ -27,13 +27,11 @@ import React, { useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { MIN_BOX_DIMENSION_CM } from "@/features/box-validation";
 import { Storage3DView } from "@/widgets/storage-view";
-
 interface BoxItem {
   id: string;
   name: string;
   category: string;
 }
-
 interface Box {
   id: string;
   name: string;
@@ -47,12 +45,10 @@ interface Box {
   sizeD: number;
   sizeH: number;
 }
-
 interface SearchResult {
   item: BoxItem;
   box: Box;
 }
-
 interface StorageViewProps {
   storageName: string;
   boxes: Box[];
@@ -65,10 +61,17 @@ interface StorageViewProps {
     newY?: number,
     newZ?: number,
   ) => void;
-  gridSize: { x: number; y: number; z: number };
-  roomSize: { width: number; depth: number; height: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  roomSize: {
+    width: number;
+    depth: number;
+    height: number;
+  };
 }
-
 export function StorageView({
   storageName,
   boxes,
@@ -79,7 +82,6 @@ export function StorageView({
   gridSize,
   roomSize,
 }: StorageViewProps) {
-  // ── Box dialog ────────────────────────────────────────────────────────────
   const [newBoxName, setNewBoxName] = useState("");
   const [boxSizeW, setBoxSizeW] = useState("");
   const [boxSizeD, setBoxSizeD] = useState("");
@@ -87,13 +89,10 @@ export function StorageView({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  // ── Search ────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightedBoxId, setHighlightedBoxId] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-
   const searchResults = useMemo<SearchResult[]>(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
@@ -110,25 +109,20 @@ export function StorageView({
     }
     return results;
   }, [searchQuery, boxes]);
-
   const handleSearchContainerBlur = (e: React.FocusEvent) => {
     if (!searchContainerRef.current?.contains(e.relatedTarget as Node)) {
       setSearchOpen(false);
       setHighlightedBoxId(null);
     }
   };
-
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
     setHighlightedBoxId(null);
   };
-
-  // ── Room dimensions ───────────────────────────────────────────────────────
   const roomWcm = Math.round(roomSize.width * 100);
   const roomDcm = Math.round(roomSize.depth * 100);
   const roomHcm = Math.round(roomSize.height * 100);
-
   const validateBox = (
     name: string,
     w: number,
@@ -153,7 +147,6 @@ export function StorageView({
       return `Высота (${h} см) превышает высоту помещения (${roomHcm} см)`;
     return null;
   };
-
   const handleAddBox = () => {
     const w = parseFloat(boxSizeW);
     const d = parseFloat(boxSizeD);
@@ -166,7 +159,6 @@ export function StorageView({
     onAddBox(newBoxName.trim(), w, d, h);
     resetDialog();
   };
-
   const resetDialog = () => {
     setNewBoxName("");
     setBoxSizeW("");
@@ -175,18 +167,14 @@ export function StorageView({
     setValidationError(null);
     setIsDialogOpen(false);
   };
-
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) resetDialog();
   };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 space-y-3">
-          {/* Row 1: back + title */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="w-5 h-5" />
@@ -208,15 +196,12 @@ export function StorageView({
             </div>
           </div>
 
-          {/* Row 2: search + buttons */}
           <div className="flex gap-2 items-center">
-            {/* ── Search ── */}
             <div
               ref={searchContainerRef}
               className="relative flex-1 min-w-0"
               onBlur={handleSearchContainerBlur}
             >
-              {/* Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <Input
@@ -237,7 +222,6 @@ export function StorageView({
                 )}
               </div>
 
-              {/* Dropdown */}
               {searchOpen && searchQuery.trim() && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-lg shadow-lg z-20 max-h-80 overflow-y-auto">
                   {searchResults.length === 0 ? (
@@ -299,9 +283,7 @@ export function StorageView({
                 </div>
               )}
             </div>
-            {/* end search container */}
 
-            {/* ── Add box ── */}
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button className="gap-2 flex-shrink-0">
@@ -410,7 +392,6 @@ export function StorageView({
               </DialogContent>
             </Dialog>
 
-            {/* ── Edit mode ── */}
             <Button
               variant={editMode ? "default" : "outline"}
               className="gap-2 flex-shrink-0"
@@ -420,11 +401,9 @@ export function StorageView({
               {editMode ? "Готово" : "Редактировать"}
             </Button>
           </div>
-          {/* end row 2 */}
         </div>
       </header>
 
-      {/* ── Main Content ─────────────────────────────────────────────────────── */}
       <main className="container mx-auto px-4 py-6 mt-3">
         <Tabs defaultValue="3d" className="w-full">
           <TabsList className="mb-4">

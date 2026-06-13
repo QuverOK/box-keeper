@@ -18,7 +18,6 @@ import { normalizeApiError } from "@/shared/api/errors";
 import { useUserStore } from "@/entities/user/model/store";
 import type { AuthResponse } from "@/shared/model";
 import { validatePassword, passwordsMatch } from "../model/password";
-
 const checklistItemVariants = {
   hidden: { opacity: 0, x: -6 },
   visible: (i: number) => ({
@@ -27,12 +26,10 @@ const checklistItemVariants = {
     transition: { delay: i * 0.04, duration: 0.18 },
   }),
 };
-
 interface LoginRegisterProps {
   onLogin: () => void;
   onScanQr?: () => void;
 }
-
 function PasswordChecklist({
   password,
   visible,
@@ -74,18 +71,14 @@ function PasswordChecklist({
     </AnimatePresence>
   );
 }
-
 export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
   const { setAuth } = useUserStore();
-
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [tabKeys, setTabKeys] = useState({ login: 0, register: 0 });
-
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
-
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerName, setRegisterName] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -93,13 +86,11 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
   const [registerError, setRegisterError] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
-
   const handleTabChange = (value: string) => {
     const tab = value as "login" | "register";
     setActiveTab(tab);
     setTabKeys((prev) => ({ ...prev, [tab]: prev[tab] + 1 }));
   };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -122,7 +113,6 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
       setLoginLoading(false);
     }
   };
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!registerEmail || !registerPassword || !registerConfirmPassword) {
@@ -155,7 +145,6 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
       setRegisterLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div
@@ -169,7 +158,11 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
           <h1 className="text-2xl max-[360px]:text-xl">BoxKeeper</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Вход</TabsTrigger>
             <TabsTrigger value="register">Регистрация</TabsTrigger>
@@ -222,7 +215,11 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
                     )}
                   </CardContent>
                   <CardFooter>
-                    <motion.div className="w-full" whileTap={{ scale: 0.97 }} transition={{ duration: 0.1 }}>
+                    <motion.div
+                      className="w-full"
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ duration: 0.1 }}
+                    >
                       <Button
                         type="submit"
                         className="w-full mt-3"
@@ -323,13 +320,19 @@ export function LoginRegister({ onLogin, onScanQr }: LoginRegisterProps) {
                     )}
                   </CardContent>
                   <CardFooter>
-                    <motion.div className="w-full" whileTap={{ scale: 0.97 }} transition={{ duration: 0.1 }}>
+                    <motion.div
+                      className="w-full"
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ duration: 0.1 }}
+                    >
                       <Button
                         type="submit"
                         className="w-full mt-3"
                         disabled={registerLoading}
                       >
-                        {registerLoading ? "Регистрация..." : "Зарегистрироваться"}
+                        {registerLoading
+                          ? "Регистрация..."
+                          : "Зарегистрироваться"}
                       </Button>
                     </motion.div>
                   </CardFooter>

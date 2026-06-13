@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Outlet, createRootRoute, useRouterState } from "@tanstack/react-router";
+import {
+  Outlet,
+  createRootRoute,
+  useRouterState,
+} from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { QueryProvider } from "../providers/QueryProvider";
 import { useUserStore } from "@/entities/user/model/store";
 import { api } from "@/shared/api/client";
 import type { User } from "@/shared/model";
 import { AppHeader } from "@/components/AppHeader";
-
 function AnimatedOutlet() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
@@ -20,11 +23,9 @@ function AnimatedOutlet() {
     </motion.div>
   );
 }
-
 function RootLayout() {
   const { token, setUser, clearAuth } = useUserStore();
   const [authReady, setAuthReady] = useState(!token);
-
   useEffect(() => {
     if (!token) {
       setAuthReady(true);
@@ -41,12 +42,10 @@ function RootLayout() {
         setAuthReady(true);
       });
   }, [token, setUser, clearAuth]);
-
   useEffect(() => {
     const dark = localStorage.getItem("darkMode") === "true";
     document.documentElement.classList.toggle("dark", dark);
   }, []);
-
   if (!authReady) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
@@ -54,7 +53,6 @@ function RootLayout() {
       </div>
     );
   }
-
   return (
     <QueryProvider>
       <AppHeader />
@@ -62,7 +60,6 @@ function RootLayout() {
     </QueryProvider>
   );
 }
-
 export const Route = createRootRoute({
   component: RootLayout,
 });

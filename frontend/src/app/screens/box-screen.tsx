@@ -5,23 +5,19 @@ import { useCreateItem } from "@/entities/item";
 import { usePublicStorage, useStorage } from "@/entities/storage";
 import { extractStorageCategories } from "@/features/item-category";
 import { stripGuestFromPath } from "../navigation";
-
 export function BoxScreen() {
   const { storageId, boxId } = useParams({
     from: "/storage/$storageId/box/$boxId",
   });
   const search = useSearch({ from: "/storage/$storageId/box/$boxId" });
   const navigate = useNavigate();
-
   const readOnly = search.guest === "1";
-
   const { data: authBox } = useBox(readOnly ? "" : boxId);
   const { data: authStorage } = useStorage(readOnly ? "" : storageId);
   const { data: publicStorage } = usePublicStorage(readOnly ? storageId : "");
   const addItem = useCreateItem(boxId, storageId);
   const updateBox = useUpdateBox(boxId, storageId);
   const deleteBox = useDeleteBox(storageId);
-
   const publicBox = publicStorage?.boxes?.find((b) => b.id === boxId);
   const box = readOnly ? publicBox : authBox;
   const roomSize =
@@ -38,22 +34,18 @@ export function BoxScreen() {
             height: authStorage.roomHeight,
           }
         : undefined;
-
   const siblingBoxes = (
     readOnly ? publicStorage?.boxes : authStorage?.boxes
   )?.map((b) => ({ id: b.id, name: b.name }));
-
   const availableCategories = extractStorageCategories(
     readOnly ? (publicStorage?.boxes ?? []) : (authStorage?.boxes ?? []),
   );
-
   const requireAuth = () => {
     const redirect = stripGuestFromPath(
       window.location.pathname + window.location.search,
     );
     navigate({ to: "/login", search: { redirect } });
   };
-
   if (!box) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -61,7 +53,6 @@ export function BoxScreen() {
       </div>
     );
   }
-
   return (
     <BoxView
       boxId={boxId}

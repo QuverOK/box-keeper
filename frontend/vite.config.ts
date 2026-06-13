@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import path from "path";
-
 export default defineConfig({
   plugins: [react(), tailwindcss(), basicSsl()],
   resolve: {

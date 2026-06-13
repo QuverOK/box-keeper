@@ -9,19 +9,16 @@ import { StoragesService } from "../storages/storages.service";
 import { CreateBoxDto } from "./dto/create-box.dto";
 import { UpdateBoxDto } from "./dto/update-box.dto";
 import { MoveBoxDto } from "./dto/move-box.dto";
-
 function generateQrCode(storageId: string, boxName: string): string {
   const slug = boxName.replace(/\s+/g, "-").toUpperCase();
   return `BOX-${storageId.slice(0, 8)}-${slug}-${Date.now()}`;
 }
-
 @Injectable()
 export class BoxesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storagesService: StoragesService,
   ) {}
-
   private async assertUniqueName(
     storageId: string,
     name: string,
@@ -40,12 +37,15 @@ export class BoxesService {
       );
     }
   }
-
   private assertBoxFitsRoom(
     sizeW: number,
     sizeD: number,
     sizeH: number,
-    storage: { roomWidth: number; roomDepth: number; roomHeight: number },
+    storage: {
+      roomWidth: number;
+      roomDepth: number;
+      roomHeight: number;
+    },
   ) {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
@@ -60,7 +60,6 @@ export class BoxesService {
       );
     }
   }
-
   async create(storageId: string, userId: string, dto: CreateBoxDto) {
     const storage = await this.storagesService.findOne(storageId, userId);
     await this.assertUniqueName(storageId, dto.name);
@@ -71,7 +70,6 @@ export class BoxesService {
       include: { items: true },
     });
   }
-
   async findAll(storageId: string, userId: string) {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.box.findMany({
@@ -80,7 +78,6 @@ export class BoxesService {
       orderBy: { createdAt: "asc" },
     });
   }
-
   async findOne(id: string, userId: string) {
     const box = await this.prisma.box.findUnique({
       where: { id },
@@ -93,7 +90,6 @@ export class BoxesService {
     if (box.storage.userId !== userId) throw new ForbiddenException();
     return box;
   }
-
   async update(id: string, userId: string, dto: UpdateBoxDto) {
     const box = await this.findOne(id, userId);
     if (dto.name !== undefined) {
@@ -109,7 +105,6 @@ export class BoxesService {
       include: { items: true },
     });
   }
-
   async move(id: string, userId: string, dto: MoveBoxDto) {
     await this.findOne(id, userId);
     return this.prisma.box.update({
@@ -122,7 +117,6 @@ export class BoxesService {
       include: { items: true },
     });
   }
-
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
     return this.prisma.box.delete({ where: { id } });

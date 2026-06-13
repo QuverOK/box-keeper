@@ -32,7 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-
 const MotionTableRow = motion(TableRow);
 import {
   AlertDialog,
@@ -63,14 +62,12 @@ import {
   createQrLabelDataUrl,
   downloadQrLabel,
 } from "@/shared/lib/qr-label-image";
-
 interface Item {
   id: string;
   name: string;
   category: string;
   description: string;
 }
-
 export interface BoxViewProps {
   boxId: string;
   boxName: string;
@@ -81,8 +78,15 @@ export interface BoxViewProps {
   qrCode: string;
   items: Item[];
   availableCategories?: string[];
-  roomSize?: { width: number; depth: number; height: number };
-  siblingBoxes?: Array<{ id: string; name: string }>;
+  roomSize?: {
+    width: number;
+    depth: number;
+    height: number;
+  };
+  siblingBoxes?: Array<{
+    id: string;
+    name: string;
+  }>;
   onBack: () => void;
   onItemClick: (itemId: string) => void;
   onAddItem: (
@@ -103,7 +107,6 @@ export interface BoxViewProps {
   readOnly?: boolean;
   onRequireAuth?: () => void;
 }
-
 const COLOR_PALETTE = [
   { value: "#e0f2fe", label: "Голубой" },
   { value: "#fef3c7", label: "Жёлтый" },
@@ -114,7 +117,6 @@ const COLOR_PALETTE = [
   { value: "#ffedd5", label: "Оранжевый" },
   { value: "#f1f5f9", label: "Серый" },
 ];
-
 export function BoxView({
   boxId,
   boxName,
@@ -133,18 +135,14 @@ export function BoxView({
   onAddItems,
   onUpdateBox,
   onDeleteBox,
-  onShowQR,
   readOnly = false,
   onRequireAuth,
 }: BoxViewProps) {
   const [isAddingItem, setIsAddingItem] = useState(false);
-  // Add item dialog state
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("");
   const [newItemDescription, setNewItemDescription] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  // Edit box dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
@@ -152,13 +150,10 @@ export function BoxView({
   const [editSizeD, setEditSizeD] = useState("");
   const [editSizeH, setEditSizeH] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-
   const promptAuth = () => setAuthDialogOpen(true);
-
   useEffect(() => {
     if (!qrCode) {
       setQrImageUrl(null);
@@ -168,12 +163,10 @@ export function BoxView({
       .then(setQrImageUrl)
       .catch(() => setQrImageUrl(null));
   }, [qrCode, boxName]);
-
   const handleDownloadQR = () => {
     if (!qrImageUrl) return;
     downloadQrLabel(qrImageUrl, boxName);
   };
-
   const guardEdit = () => {
     if (readOnly) {
       promptAuth();
@@ -181,7 +174,6 @@ export function BoxView({
     }
     return false;
   };
-
   const handleAddItem = async () => {
     if (!newItemName.trim() || isAddingItem) return;
     setIsAddingItem(true);
@@ -195,7 +187,6 @@ export function BoxView({
       setIsAddingItem(false);
     }
   };
-
   const openEditDialog = () => {
     setEditName(boxName);
     setEditColor(boxColor);
@@ -205,23 +196,19 @@ export function BoxView({
     setEditError(null);
     setIsEditDialogOpen(true);
   };
-
   const handleSaveBox = async () => {
     const trimmedName = editName.trim();
     if (!trimmedName) {
       setEditError("Введите название коробки");
       return;
     }
-
     if (isDuplicateBoxName(trimmedName, siblingBoxes, boxId)) {
       setEditError("Коробка с таким названием уже существует");
       return;
     }
-
     const w = parseFloat(editSizeW);
     const d = parseFloat(editSizeD);
     const h = parseFloat(editSizeH);
-
     if (!editSizeW || isNaN(w) || w <= 0) {
       setEditError("Укажите корректную длину (> 0)");
       return;
@@ -234,7 +221,6 @@ export function BoxView({
       setEditError("Укажите корректную высоту (> 0)");
       return;
     }
-
     if (roomSize) {
       const roomCheck = validateBoxFitsInRoom(
         { sizeW: w, sizeD: d, sizeH: h },
@@ -247,11 +233,9 @@ export function BoxView({
         return;
       }
     }
-
     await onUpdateBox(trimmedName, editColor, w, d, h);
     setIsEditDialogOpen(false);
   };
-
   const searchNormalized = searchQuery.trim().toLowerCase();
   const filteredItems = items.filter(
     (item) =>
@@ -259,12 +243,9 @@ export function BoxView({
       item.category.toLowerCase().includes(searchNormalized) ||
       item.description.toLowerCase().includes(searchNormalized),
   );
-
   const colorTooDark = useMemo(() => isColorTooDark(editColor), [editColor]);
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="page-container py-4">
           <div className="flex items-center gap-4 mb-4">
@@ -296,11 +277,6 @@ export function BoxView({
                 </div>
               </div>
             </div>
-            {/* {!readOnly && (
-              <Button variant="outline" size="icon" onClick={onShowQR}>
-                <QrCode className="w-5 h-5" />
-              </Button>
-            )} */}
           </div>
 
           {readOnly && (
@@ -322,7 +298,6 @@ export function BoxView({
           )}
 
           <div className="flex gap-2 flex-wrap">
-            {/* Add item dialog */}
             <Dialog
               open={readOnly ? false : isAddDialogOpen}
               onOpenChange={readOnly ? undefined : setIsAddDialogOpen}
@@ -407,7 +382,6 @@ export function BoxView({
               onRequireAuth={promptAuth}
             />
 
-            {/* Edit box dialog */}
             <Dialog
               open={readOnly ? false : isEditDialogOpen}
               onOpenChange={readOnly ? undefined : setIsEditDialogOpen}
@@ -436,7 +410,6 @@ export function BoxView({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 py-4">
-                  {/* Name */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-box-name">Название</Label>
                     <Input
@@ -450,11 +423,9 @@ export function BoxView({
                     />
                   </div>
 
-                  {/* Color */}
                   <div className="space-y-3">
                     <Label>Цвет</Label>
 
-                    {/* Quick presets */}
                     <div className="flex flex-wrap gap-2">
                       {COLOR_PALETTE.map((c) => (
                         <button
@@ -479,14 +450,13 @@ export function BoxView({
                       ))}
                     </div>
 
-                    {/* Full color picker */}
                     <div className="flex flex-col items-center gap-3">
                       <HexColorPicker
                         color={editColor}
                         onChange={setEditColor}
                         style={{ width: "100%", height: "160px" }}
                       />
-                      {/* Hex input */}
+
                       <div className="flex items-center gap-2 w-full">
                         <div
                           className="w-8 h-8 rounded border flex-shrink-0"
@@ -518,7 +488,6 @@ export function BoxView({
                     )}
                   </div>
 
-                  {/* Dimensions */}
                   <div className="space-y-2">
                     <Label>Размеры (в сантиметрах)</Label>
                     <div className="grid grid-cols-3 gap-3">
@@ -582,7 +551,6 @@ export function BoxView({
                     </div>
                   </div>
 
-                  {/* Preview */}
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border">
                     <div
                       className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0"
@@ -601,7 +569,6 @@ export function BoxView({
                     </div>
                   </div>
 
-                  {/* Validation error */}
                   {editError && (
                     <p className="text-sm text-red-600">{editError}</p>
                   )}
@@ -618,7 +585,6 @@ export function BoxView({
               </DialogContent>
             </Dialog>
 
-            {/* Delete box */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -655,7 +621,6 @@ export function BoxView({
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="page-container py-8">
         {qrImageUrl && (
           <Card className="mb-6">
@@ -691,7 +656,6 @@ export function BoxView({
           </Card>
         )}
 
-        {/* Search */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -704,7 +668,6 @@ export function BoxView({
           </div>
         </div>
 
-        {/* Items Table */}
         <Card>
           <CardContent className="p-0">
             {filteredItems.length > 0 ? (
@@ -723,7 +686,11 @@ export function BoxView({
                       key={item.id}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2, delay: index * 0.03, ease: "easeOut" }}
+                      transition={{
+                        duration: 0.2,
+                        delay: index * 0.03,
+                        ease: "easeOut",
+                      }}
                       className="cursor-pointer hover:bg-gray-50"
                       onClick={() => onItemClick(item.id)}
                     >

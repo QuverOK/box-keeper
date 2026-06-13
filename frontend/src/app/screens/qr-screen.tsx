@@ -16,34 +16,34 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { getToken } from "../route-guards";
-
 export function QrScreen() {
   const navigate = useNavigate();
   const { token, clearAuth } = useUserStore();
   const params = useParams({ strict: false });
   const boxId =
     "boxId" in params ? (params.boxId as string | undefined) : undefined;
-
   const isAuthenticated = !!token || !!getToken();
   const { data: box } = useBox(isAuthenticated && boxId ? boxId : "");
-
   const [pendingForeignScan, setPendingForeignScan] = useState<{
     storageId: string;
     boxId: string;
   } | null>(null);
   const [scannerKey, setScannerKey] = useState(0);
-
   const qrCodeData =
     box && boxId
       ? {
           boxName: box.name,
           storageName:
-            (box as typeof box & { storage?: { name: string } }).storage
-              ?.name ?? "",
+            (
+              box as typeof box & {
+                storage?: {
+                  name: string;
+                };
+              }
+            ).storage?.name ?? "",
           qrCodeToken: box.qrCode,
         }
       : undefined;
-
   const handleScanSuccess = useCallback(
     async ({
       storageId,
@@ -61,7 +61,6 @@ export function QrScreen() {
         });
         return;
       }
-
       try {
         await api.get(`/boxes/${scannedBoxId}`);
         navigate({
@@ -79,7 +78,6 @@ export function QrScreen() {
     },
     [navigate],
   );
-
   const handleConfirmForeignScan = () => {
     if (!pendingForeignScan) return;
     const { storageId, boxId: scannedBoxId } = pendingForeignScan;
@@ -91,7 +89,6 @@ export function QrScreen() {
       search: { guest: "1" },
     });
   };
-
   return (
     <>
       <QRScanner

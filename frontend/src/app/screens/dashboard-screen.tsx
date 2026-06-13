@@ -6,14 +6,12 @@ import {
   useDeleteStorage,
 } from "@/entities/storage";
 import { useUserStore } from "@/entities/user/model/store";
-
 export function DashboardScreen() {
   const navigate = useNavigate();
   const { user } = useUserStore();
   const { data: storages = [] } = useStorages();
   const createStorage = useCreateStorage();
   const deleteStorage = useDeleteStorage();
-
   return (
     <Dashboard
       userEmail={user?.email ?? ""}

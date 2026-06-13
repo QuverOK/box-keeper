@@ -3,20 +3,18 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { CategoryCombobox } from "@/features/item-category";
 import {
+  CategoryCombobox,
   clampItemDescription,
   MAX_ITEM_DESCRIPTION_LENGTH,
 } from "@/entities/item";
 import { createEmptyDraftItem, type DraftItem } from "../model/types";
-
 export interface BulkItemsFormProps {
   items: DraftItem[];
   onChange: (items: DraftItem[]) => void;
   categories: string[];
   compact?: boolean;
 }
-
 export function BulkItemsForm({
   items,
   onChange,
@@ -25,13 +23,11 @@ export function BulkItemsForm({
 }: BulkItemsFormProps) {
   const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const pendingFocusIdRef = useRef<string | null>(null);
-
   const updateItem = (id: string, patch: Partial<DraftItem>) => {
     onChange(
       items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
   };
-
   const removeItem = (id: string) => {
     nameInputRefs.current.delete(id);
     if (items.length <= 1) {
@@ -40,13 +36,11 @@ export function BulkItemsForm({
     }
     onChange(items.filter((item) => item.id !== id));
   };
-
   const addRow = () => {
     const newItem = createEmptyDraftItem();
     pendingFocusIdRef.current = newItem.id;
     onChange([...items, newItem]);
   };
-
   const handleDescriptionTab = (
     e: KeyboardEvent<HTMLInputElement>,
     index: number,
@@ -62,7 +56,6 @@ export function BulkItemsForm({
       onChange([...items, newItem]);
     }
   };
-
   useEffect(() => {
     const focusId = pendingFocusIdRef.current;
     if (!focusId) return;
@@ -72,7 +65,6 @@ export function BulkItemsForm({
       pendingFocusIdRef.current = null;
     }
   }, [items]);
-
   return (
     <div className="space-y-3">
       {items.map((item, index) => (

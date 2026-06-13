@@ -12,16 +12,13 @@ import {
 } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Box, Check, X } from "lucide-react";
-
 interface LoginRegisterProps {
   onLogin: (email: string) => void;
 }
-
 interface PasswordRule {
   label: string;
   test: (pw: string) => boolean;
 }
-
 const PASSWORD_RULES: PasswordRule[] = [
   { label: "Минимум 6 символов", test: (pw) => pw.length >= 6 },
   { label: "Хотя бы одна заглавная буква", test: (pw) => /[A-ZА-ЯЁ]/.test(pw) },
@@ -30,11 +27,9 @@ const PASSWORD_RULES: PasswordRule[] = [
     test: (pw) => /[^a-zA-Zа-яА-ЯёЁ0-9]/.test(pw),
   },
 ];
-
 function isPasswordValid(pw: string) {
   return PASSWORD_RULES.every((r) => r.test(pw));
 }
-
 function PasswordChecklist({
   password,
   visible,
@@ -64,18 +59,15 @@ function PasswordChecklist({
     </ul>
   );
 }
-
 export function LoginRegister({ onLogin }: LoginRegisterProps) {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerError, setRegisterError] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -85,7 +77,6 @@ export function LoginRegister({ onLogin }: LoginRegisterProps) {
     setLoginError("");
     onLogin(loginEmail);
   };
-
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!registerEmail || !registerPassword || !registerConfirmPassword) {
@@ -104,7 +95,6 @@ export function LoginRegister({ onLogin }: LoginRegisterProps) {
     setRegisterError("");
     onLogin(registerEmail);
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -119,7 +109,6 @@ export function LoginRegister({ onLogin }: LoginRegisterProps) {
             <TabsTrigger value="register">Регистрация</TabsTrigger>
           </TabsList>
 
-          {/* Login */}
           <TabsContent value="login">
             <Card>
               <form onSubmit={handleLogin}>
@@ -169,7 +158,6 @@ export function LoginRegister({ onLogin }: LoginRegisterProps) {
             </Card>
           </TabsContent>
 
-          {/* Register */}
           <TabsContent value="register">
             <Card>
               <form onSubmit={handleRegister}>

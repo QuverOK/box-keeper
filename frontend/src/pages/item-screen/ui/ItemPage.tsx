@@ -16,7 +16,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/ui/alert-dialog";
-
 interface ItemViewProps {
   item: {
     id: string;
@@ -34,7 +33,6 @@ interface ItemViewProps {
     photo?: string,
   ) => void;
 }
-
 export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -42,9 +40,7 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
   const [editDescription, setEditDescription] = useState(item.description);
   const [editPhoto, setEditPhoto] = useState<string | undefined>(item.photo);
   const [nameError, setNameError] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const startEditing = () => {
     setEditName(item.name);
     setEditCategory(item.category);
@@ -53,7 +49,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
     setNameError(false);
     setIsEditing(true);
   };
-
   const handleSave = () => {
     if (!editName.trim()) {
       setNameError(true);
@@ -67,7 +62,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
     );
     setIsEditing(false);
   };
-
   const handleCancel = () => {
     setEditName(item.name);
     setEditCategory(item.category);
@@ -76,7 +70,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
     setNameError(false);
     setIsEditing(false);
   };
-
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -87,12 +80,9 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
     reader.readAsDataURL(file);
     e.target.value = "";
   };
-
   const displayPhoto = isEditing ? editPhoto : item.photo;
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -163,7 +153,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Card>
           <CardHeader>
@@ -172,7 +161,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Photo */}
             <div className="space-y-2">
               <Label>Фото</Label>
               {displayPhoto ? (
@@ -233,7 +221,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
               />
             </div>
 
-            {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="item-name">Название</Label>
               {isEditing ? (
@@ -263,7 +250,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
               )}
             </div>
 
-            {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="item-category">Категория</Label>
               {isEditing ? (
@@ -282,7 +268,6 @@ export function ItemView({ item, onBack, onDelete, onUpdate }: ItemViewProps) {
               )}
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="item-description">Описание</Label>
               {isEditing ? (

@@ -17,7 +17,6 @@ import {
   type DraftItem,
   type ItemInput,
 } from "../model/types";
-
 export interface AddItemsDialogProps {
   categories: string[];
   onSubmit: (items: ItemInput[]) => void | Promise<void>;
@@ -30,7 +29,6 @@ export interface AddItemsDialogProps {
   readOnly?: boolean;
   onRequireAuth?: () => void;
 }
-
 export function AddItemsDialog({
   categories,
   onSubmit,
@@ -47,23 +45,19 @@ export function AddItemsDialog({
   const [items, setItems] = useState<DraftItem[]>([createEmptyDraftItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled
     ? (v: boolean) => controlledOnOpenChange?.(v)
     : setInternalOpen;
-
   const reset = () => {
     setItems([createEmptyDraftItem()]);
     setError(null);
   };
-
   const handleOpenChange = (next: boolean) => {
     if (!next) reset();
     setOpen(next);
   };
-
   const handleSubmit = async () => {
     const validItems = draftItemsToInput(items);
     if (validItems.length === 0) {
@@ -81,7 +75,6 @@ export function AddItemsDialog({
       setIsSubmitting(false);
     }
   };
-
   return (
     <Dialog open={readOnly ? false : open} onOpenChange={handleOpenChange}>
       {trigger !== undefined ? (

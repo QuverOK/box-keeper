@@ -27,7 +27,6 @@ import {
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/cn";
-import { MiniCubeViewer } from "./MiniCubeViewer";
 import {
   useCanvasViewport,
   ZOOM_MIN,
@@ -62,7 +61,6 @@ import {
   LAYOUT_LABEL_PREFIX,
 } from "@/features/layout-drag";
 import type { LayoutLabel, Partition } from "@/shared/model";
-
 interface Box {
   id: string;
   name: string;
@@ -75,14 +73,14 @@ interface Box {
   sizeD: number;
   sizeH: number;
 }
-
-type PlacedBox = Box & { x: number; y: number; z: number };
-
+type PlacedBox = Box & {
+  x: number;
+  y: number;
+  z: number;
+};
 const isPlaced = (box: Box): box is PlacedBox =>
   box.x !== undefined && box.y !== undefined && box.z !== undefined;
-
 type ViewMode = "XY" | "XZ" | "YZ";
-
 interface Storage3DViewProps {
   boxes: Box[];
   onBoxClick: (boxId: string) => void;
@@ -90,14 +88,22 @@ interface Storage3DViewProps {
   highlightedBoxId?: string | null;
   searchActive?: boolean;
   matchingBoxIds?: Set<string>;
-  gridSize: { x: number; y: number; z: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
   onMoveBox: (
     boxId: string,
     newX?: number,
     newY?: number,
     newZ?: number,
   ) => void;
-  roomSize: { width: number; depth: number; height: number };
+  roomSize: {
+    width: number;
+    depth: number;
+    height: number;
+  };
   partitions?: Partition[];
   layoutLabels?: LayoutLabel[];
   layoutEditMode?: boolean;
@@ -108,7 +114,6 @@ interface Storage3DViewProps {
   onAddBox?: () => void;
   isSavingStorage?: boolean;
 }
-
 export function Storage3DView({
   boxes,
   onBoxClick,
@@ -116,7 +121,7 @@ export function Storage3DView({
   highlightedBoxId,
   searchActive = false,
   matchingBoxIds,
-  gridSize,
+  gridSize: _gridSize,
   onMoveBox,
   roomSize,
   partitions = [],
@@ -129,6 +134,7 @@ export function Storage3DView({
   onAddBox,
   isSavingStorage = false,
 }: Storage3DViewProps) {
+  void _gridSize;
   const [viewMode] = useState<ViewMode>("XY");
   const [focusedBoxId, setFocusedBoxId] = useState<string | null>(null);
   const {
@@ -136,16 +142,12 @@ export function Storage3DView({
     toggle: toggleFullscreen,
     containerRef,
   } = useFullscreen();
-  // Key of the currently fanned-out stack = its top box id (null = collapsed)
   const [expandedStackId, setExpandedStackId] = useState<string | null>(null);
-  // Fullscreen-only: collapsible "unplaced boxes" dock (collapsed by default).
   const [stagingOpen, setStagingOpen] = useState(false);
-
   const isSearchMatch = (boxId: string): boolean =>
     !!matchingBoxIds && matchingBoxIds.has(boxId);
   const isSearchDimmed = (boxId: string): boolean =>
     searchActive && !isSearchMatch(boxId);
-
   const getBoxHighlight = (
     boxId: string,
     opts: {
@@ -160,25 +162,16 @@ export function Storage3DView({
       isFocused: focusedBoxId === boxId && !editMode,
       isStackExpanded: opts.isStackExpanded,
     });
-
-  // ─── Room dimensions ──────────────────────────────────────────────────────────
-
-  // Only XY view is active; depth axis = Z (height)
   const roomWcm = roomSize.width * 100;
   const roomHcm = roomSize.depth * 100;
   const roomHeightCm = roomSize.height * 100;
-
   const dragRoom = {
     widthCm: roomWcm,
     depthCm: roomHcm,
     heightCm: roomHeightCm,
   };
-
-  // ─── Box sets ────────────────────────────────────────────────────────────────
-
   const placedBoxes = boxes.filter(isPlaced);
   const unplacedBoxes = boxes.filter((b) => !isPlaced(b));
-
   const placedBoxDims: PlacedBoxDims[] = placedBoxes.map((b) => ({
     id: b.id,
     sizeW: b.sizeW,
@@ -188,38 +181,27 @@ export function Storage3DView({
     y: b.y,
     z: b.z,
   }));
-
-  // ─── Stacks (columns of overlapping boxes) ─────────────────────────────────────
-
   const stacks = computeStacks(placedBoxDims);
-
-  // boxId → { its stack, index within the stack (0 = bottom) }
   const stackInfoByBoxId = new Map<
     string,
-    { stack: BoxStack; index: number }
+    {
+      stack: BoxStack;
+      index: number;
+    }
   >();
   for (const stack of stacks) {
     stack.boxes.forEach((b, index) =>
       stackInfoByBoxId.set(b.id, { stack, index }),
     );
   }
-
   const expandedStack =
     stacks.find((s) => s.topBoxId === expandedStackId) ?? null;
   const isAnyExpanded = expandedStack !== null;
   const expandedBoxIds = expandedStack
     ? new Set(expandedStack.boxes.map((b) => b.id))
     : null;
-
-  // Render bottom → top so higher boxes paint on top of lower ones.
   const sortedPlacedBoxes = [...placedBoxes].sort((a, b) => a.z - b.z);
-
-  // Forbidden drop zone: while dragging a box out of the open cluster, block
-  // re-stacking onto that same cluster's footprint. Kept in a ref so the drag
-  // hook can read the latest value at drop time without re-subscribing.
   const forbiddenZoneRef = useRef<XYZone | null>(null);
-
-  // Collapse a stale expanded stack (e.g. after a box was moved away).
   useEffect(() => {
     if (
       expandedStackId &&
@@ -228,8 +210,6 @@ export function Storage3DView({
       setExpandedStackId(null);
     }
   }, [expandedStackId, stacks]);
-
-  // Collapse the fan with the Escape key.
   useEffect(() => {
     if (!expandedStackId) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -238,7 +218,6 @@ export function Storage3DView({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expandedStackId]);
-
   const partitionDims: PartitionDims[] = partitions.map((p) => ({
     id: p.id,
     x: p.x,
@@ -248,9 +227,6 @@ export function Storage3DView({
     depth: p.depth,
     height: p.height,
   }));
-
-  // ─── Drag state ────────────────────────────────────────────────────────────────
-
   const {
     draggedBoxId,
     hoveredBoxId,
@@ -281,7 +257,6 @@ export function Storage3DView({
     forbiddenZoneRef,
     partitions: partitionDims,
   });
-
   const layoutDragCallbacks = useMemo(
     () => ({
       onMovePartition: (id: string, x: number, y: number) => {
@@ -293,7 +268,6 @@ export function Storage3DView({
     }),
     [onMovePartition, onMoveLayoutLabel],
   );
-
   const {
     draggedItem: draggedLayoutItem,
     dragOverCm: layoutDragOverCm,
@@ -314,7 +288,6 @@ export function Storage3DView({
     callbacks: layoutDragCallbacks,
     gridRef,
   });
-
   const handleCanvasDragOver = useCallback(
     (e: React.DragEvent) => {
       if (layoutEditMode) handleLayoutGridDragOver(e);
@@ -322,7 +295,6 @@ export function Storage3DView({
     },
     [layoutEditMode, editMode, handleLayoutGridDragOver, handleGridDragOver],
   );
-
   const handleCanvasDragLeave = useCallback(
     (e: React.DragEvent) => {
       if (layoutEditMode) handleLayoutGridDragLeave(e);
@@ -330,7 +302,6 @@ export function Storage3DView({
     },
     [layoutEditMode, editMode, handleLayoutGridDragLeave, handleGridDragLeave],
   );
-
   const handleCanvasDrop = useCallback(
     (e: React.DragEvent) => {
       const data = e.dataTransfer.getData("text/plain");
@@ -345,11 +316,7 @@ export function Storage3DView({
     },
     [editMode, handleLayoutGridDrop, handleGridDrop],
   );
-
   const anyLayoutDragActive = draggedLayoutItem !== null;
-
-  // While a box from the open cluster is being dragged, mark the cluster's real
-  // XY footprint as a "return zone": dropping there cancels the move (box stays).
   const clusterFootprint: XYZone | null = expandedStack
     ? (() => {
         const x = Math.min(...expandedStack.boxes.map((b) => b.x));
@@ -366,13 +333,9 @@ export function Storage3DView({
   const activeForbiddenZone: XYZone | null = draggedInExpandedCluster
     ? clusterFootprint
     : null;
-
   useEffect(() => {
     forbiddenZoneRef.current = activeForbiddenZone;
   }, [activeForbiddenZone]);
-
-  // ─── Pan / zoom viewport ─────────────────────────────────────────────────────
-
   const {
     viewportRef,
     setViewportNode,
@@ -398,10 +361,6 @@ export function Storage3DView({
     onPointerMove,
     onPointerUp,
   } = useCanvasViewport({ roomWcm, roomHcm, canvasRef: gridRef });
-
-  // Entering/leaving fullscreen resizes the viewport drastically; refit the
-  // canvas to the new viewport once it has re-measured (otherwise the room
-  // stays tiny in a corner with the old scroll offset).
   const refitOnResizeRef = useRef(false);
   const resetZoomTarget = isFullscreen ? FULLSCREEN_DEFAULT_ZOOM : 1;
   useEffect(() => {
@@ -419,7 +378,6 @@ export function Storage3DView({
       el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
     });
   }, [viewportSize, resetZoom, resetZoomTarget, viewportRef]);
-
   const fanLayout = expandedStack
     ? computeFanLayout({
         stack: expandedStack,
@@ -427,8 +385,13 @@ export function Storage3DView({
         roomHcm,
         viewportW: viewportSize.w || 800,
       })
-    : new Map<string, { leftPct: number; topPct: number }>();
-
+    : new Map<
+        string,
+        {
+          leftPct: number;
+          topPct: number;
+        }
+      >();
   useEffect(() => {
     if (!expandedStackId || !expandedStack || viewportSize.w <= 0) return;
     const layout = computeFanLayout({
@@ -463,31 +426,20 @@ export function Storage3DView({
     viewportSize.w,
     zoomToBox,
   ]);
-
   const handleToggleStack = (stack: BoxStack) => {
     setExpandedStackId(
       expandedStackId === stack.topBoxId ? null : stack.topBoxId,
     );
   };
-
   const handleZoomToPlacedBox = (box: PlacedBox) => {
     zoomToBox(box.x, box.y, box.sizeW, box.sizeD);
   };
-
-  // ─── Opacity ─────────────────────────────────────────────────────────────────
-
   const maxPlacedZ = placedBoxes.reduce((m, b) => Math.max(m, b.z), 0);
-
   const getBoxOpacity = (box: PlacedBox): number => {
-    // Standalone boxes (not part of a stack) are always fully opaque — only
-    // boxes inside a stack get the depth fade that hints at layering.
     if (!stackInfoByBoxId.has(box.id)) return 1.0;
     if (maxPlacedZ === 0) return 1.0;
     return Math.max(0.3, Math.min(1.0, 0.3 + 0.7 * (box.z / maxPlacedZ)));
   };
-
-  // ─── Canvas position / style helpers ─────────────────────────────────────────
-
   const boxCanvasStyle = (
     box: Box,
     xCm: number,
@@ -498,17 +450,11 @@ export function Storage3DView({
     width: `${(box.sizeW / roomWcm) * 100}%`,
     height: `${(box.sizeD / roomHcm) * 100}%`,
   });
-
-  // ─── Focused box ─────────────────────────────────────────────────────────────
-
   const focusedBox = boxes.find((b) => b.id === focusedBoxId) ?? null;
-
-  // When drag starts in edit mode, show info panel for that box
   const handleCanvasDragStart = (e: React.DragEvent, boxId: string) => {
     handleDragStart(e, boxId, true);
     setFocusedBoxId(boxId);
   };
-
   const handleStagingCardDragStart = (e: React.DragEvent, boxId: string) => {
     const b = boxes.find((box) => box.id === boxId);
     const offsetPx =
@@ -518,9 +464,6 @@ export function Storage3DView({
     handleDragStart(e, boxId, false, offsetPx);
     setFocusedBoxId(boxId);
   };
-
-  // ─── JSX ─────────────────────────────────────────────────────────────────────
-
   const actionButtons = (
     <>
       {onAddBox && (
@@ -562,7 +505,6 @@ export function Storage3DView({
       )}
     </>
   );
-
   const zoomControls = (
     <div className="flex items-center gap-1.5">
       <Button
@@ -628,7 +570,6 @@ export function Storage3DView({
       </Button>
     </div>
   );
-
   const stagingList =
     unplacedBoxes.length === 0 ? (
       <div
@@ -726,7 +667,6 @@ export function Storage3DView({
         )}
       </div>
     );
-
   const stagingHeader = (
     <div className="flex items-center gap-2 mb-3">
       <Inbox className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -743,7 +683,6 @@ export function Storage3DView({
       )}
     </div>
   );
-
   const boxInfoCard = focusedBox && (
     <Card className="p-4 border transition-all duration-200">
       <div className="flex items-start gap-2 mb-3">
@@ -820,9 +759,6 @@ export function Storage3DView({
       </div>
     </Card>
   );
-
-  // Compact, single-row box info used in fullscreen on mobile: minimal height,
-  // content laid out horizontally, sits just above the zoom pill.
   const mobileBoxInfoBar = focusedBox && (
     <Card className="p-3 flex flex-row justify-between items-center shadow-lg">
       <div className="flex flex-col gap-2">
@@ -878,7 +814,6 @@ export function Storage3DView({
       </div>
     </Card>
   );
-
   const emptyInfoCard = (
     <Card className="p-4 flex flex-col items-center justify-center gap-2 text-center min-h-[120px] border-dashed">
       <BoxIcon className="w-6 h-6 text-muted-foreground/40" />
@@ -889,7 +824,6 @@ export function Storage3DView({
       </p>
     </Card>
   );
-
   const canvasRegion = (
     <div
       ref={measureRef}
@@ -912,13 +846,11 @@ export function Storage3DView({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       >
-        {/* Content wrapper — centers the canvas, expands for scrolling */}
         <div
           ref={contentRef}
           className="relative"
           style={{ width: contentW, height: contentH }}
         >
-          {/* White canvas — receives drop events, sized to real scale */}
           <div
             ref={gridRef}
             className={cn(
@@ -941,7 +873,6 @@ export function Storage3DView({
             onDrop={editMode || layoutEditMode ? handleCanvasDrop : undefined}
             onClick={isAnyExpanded ? () => setExpandedStackId(null) : undefined}
           >
-            {/* ── Ghost drop preview ──────────────────────────────── */}
             {editMode &&
               dragOverCm &&
               draggedBoxId &&
@@ -965,25 +896,19 @@ export function Storage3DView({
                 );
               })()}
 
-            {/* ── Placed boxes ─────────────────────────────────────── */}
             {sortedPlacedBoxes.map((box) => {
               const opacity = getBoxOpacity(box);
               if (opacity === 0) return null;
               const isDragging = draggedBoxId === box.id;
               const isHovered = hoveredBoxId === box.id;
               const dimmed = isSearchDimmed(box.id);
-
               const stackInfo = stackInfoByBoxId.get(box.id);
               const isTopOfStack = stackInfo?.stack.topBoxId === box.id;
               const isInExpandedStack = expandedBoxIds?.has(box.id) ?? false;
               const isThisStackExpanded =
                 stackInfo != null &&
                 expandedStackId === stackInfo.stack.topBoxId;
-              // Other (non-expanded) boxes recede while a stack is fanned out.
               const recede = isAnyExpanded && !isInExpandedStack;
-
-              // Fanned boxes are repositioned into a clean, non-overlapping
-              // row instead of sitting on their real (overlapping) footprint.
               const fanPos = isInExpandedStack
                 ? fanLayout.get(box.id)
                 : undefined;
@@ -997,7 +922,6 @@ export function Storage3DView({
                     transition: "left 150ms ease, top 150ms ease",
                   }
                 : boxCanvasStyle(box, box.x, box.y);
-
               const baseOpacity = isDragging
                 ? 0.4
                 : dimmed
@@ -1008,7 +932,6 @@ export function Storage3DView({
                 : recede
                   ? baseOpacity * 0.12
                   : baseOpacity;
-
               return (
                 <div
                   key={box.id}
@@ -1068,7 +991,6 @@ export function Storage3DView({
                     )}
                   </DraggableBox>
 
-                  {/* Stack badge / collapse control on the top box */}
                   {stackInfo && isTopOfStack && !recede && (
                     <button
                       type="button"
@@ -1097,7 +1019,6 @@ export function Storage3DView({
               );
             })}
 
-            {/* ── Layout drag ghost ── */}
             {layoutEditMode &&
               layoutDragOverCm &&
               draggedLayoutItem &&
@@ -1133,7 +1054,6 @@ export function Storage3DView({
                 );
               })()}
 
-            {/* ── Partitions (above boxes in layout mode) ── */}
             {partitions.map((p) => {
               const style: React.CSSProperties = {
                 left: `${(p.x / roomWcm) * 100}%`,
@@ -1146,7 +1066,6 @@ export function Storage3DView({
                 draggedLayoutItem?.kind === "partition" &&
                 draggedLayoutItem.id === p.id;
               const isHovered = hoveredLayoutItemId === p.id;
-
               if (layoutEditMode) {
                 return (
                   <DraggablePartition
@@ -1165,7 +1084,6 @@ export function Storage3DView({
                   />
                 );
               }
-
               return (
                 <div
                   key={p.id}
@@ -1176,7 +1094,6 @@ export function Storage3DView({
               );
             })}
 
-            {/* ── Layout labels ── */}
             {layoutLabels.map((l) => {
               const style: React.CSSProperties = {
                 left: `${(l.x / roomWcm) * 100}%`,
@@ -1187,7 +1104,6 @@ export function Storage3DView({
                 draggedLayoutItem?.kind === "label" &&
                 draggedLayoutItem.id === l.id;
               const isHovered = hoveredLayoutItemId === l.id;
-
               if (layoutEditMode) {
                 return (
                   <DraggableLayoutLabel
@@ -1207,7 +1123,6 @@ export function Storage3DView({
                   />
                 );
               }
-
               return (
                 <div
                   key={l.id}
@@ -1219,7 +1134,6 @@ export function Storage3DView({
               );
             })}
 
-            {/* Empty canvas hint */}
             {placedBoxes.length === 0 && !dragOverCm && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <p className="text-sm text-muted-foreground/40 select-none">
@@ -1234,7 +1148,6 @@ export function Storage3DView({
       </div>
     </div>
   );
-
   const legend = editMode ? (
     <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
       <p className="text-sm text-amber-800 dark:text-amber-200 mb-1 font-semibold">
@@ -1267,7 +1180,6 @@ export function Storage3DView({
       </ul>
     </div>
   );
-
   if (isFullscreen) {
     return (
       <div
@@ -1277,14 +1189,12 @@ export function Storage3DView({
         <div className="relative h-full w-full overflow-hidden">
           {canvasRegion}
 
-          {/* Top-left: edit-mode badge (desktop only; on mobile the dock sits here) */}
           {editMode && (
             <div className="absolute top-3 left-3 z-20 hidden sm:block text-sm text-blue-700 dark:text-blue-200 font-medium bg-card/95 backdrop-blur px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800 shadow">
               Режим редактирования
             </div>
           )}
 
-          {/* Top-right: actions + exit */}
           <div className="absolute top-3 right-3 z-20 flex flex-wrap justify-end gap-2 max-w-[calc(100%-1.5rem)]">
             {actionButtons}
             <Button
@@ -1299,26 +1209,22 @@ export function Storage3DView({
             </Button>
           </div>
 
-          {/* Box info — desktop: floating card top-right */}
           {focusedBox && (
             <div className="absolute z-20 w-64 right-3 top-16 hidden sm:block">
               {boxInfoCard}
             </div>
           )}
 
-          {/* Box info — mobile: compact bar just above the zoom pill */}
           {focusedBox && (
             <div className="absolute z-20 left-3 right-3 bottom-16 sm:hidden">
               {mobileBoxInfoBar}
             </div>
           )}
 
-          {/* Bottom-center: zoom pill */}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-card/95 backdrop-blur border border-border shadow-lg rounded-full px-3 py-1.5">
             {zoomControls}
           </div>
 
-          {/* Collapsible unplaced-boxes dock — top on mobile, bottom-left on desktop */}
           <div className="absolute z-20 left-3 top-3 sm:top-auto sm:bottom-3 max-w-[calc(100%-1.5rem)]">
             <button
               type="button"
@@ -1356,10 +1262,8 @@ export function Storage3DView({
       </div>
     );
   }
-
   return (
     <div ref={containerRef} className="space-y-4">
-      {/* ── View Mode Controls ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-4 items-center justify-between bg-card p-4 rounded-lg border border-border">
         <div className="flex gap-2">
           <Button
@@ -1372,10 +1276,8 @@ export function Storage3DView({
         </div>
       </div>
 
-      {/* ── Grid + Mini Viewer ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
         <div className="space-y-4 min-w-0">
-          {/* ── Staging area ──────────────────────────────────────────────── */}
           <Card
             className={cn(
               "p-4 transition-colors duration-150",
@@ -1391,7 +1293,6 @@ export function Storage3DView({
             {stagingList}
           </Card>
 
-          {/* ── Main canvas card ──────────────────────────────────────────── */}
           <Card className="p-4 max-[360px]:p-3">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -1403,7 +1304,6 @@ export function Storage3DView({
                 )}
               </div>
 
-              {/* Zoom toolbar */}
               <div className="flex items-center gap-1.5">
                 <span className="hidden sm:inline text-xs text-muted-foreground mr-1 select-none">
                   Пробел + перетаскивание — перемещение · Ctrl + колесо —
@@ -1415,16 +1315,11 @@ export function Storage3DView({
 
             {canvasRegion}
 
-            {/* Legend */}
             {legend}
           </Card>
         </div>
 
-        {/* ── Right sidebar: cube viewer + box info ──────────────────────── */}
         <div className="lg:sticky lg:top-4 h-fit flex flex-col gap-4 w-full lg:w-56">
-          {/* <MiniCubeViewer viewMode={viewMode} gridSize={gridSize} /> */}
-
-          {/* Box info panel */}
           {focusedBox ? boxInfoCard : emptyInfoCard}
         </div>
       </div>

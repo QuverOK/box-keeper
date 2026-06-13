@@ -1,15 +1,16 @@
 import type { LayoutRoom } from "../model/clamp";
 import { clampLabelXY, clampPartitionXY } from "../model/clamp";
-
 interface LayoutDragGhostProps {
   kind: "partition" | "label";
   text?: string;
   width: number;
   depth: number;
-  dragOverCm: { xCm: number; yCm: number };
+  dragOverCm: {
+    xCm: number;
+    yCm: number;
+  };
   room: LayoutRoom;
 }
-
 export function LayoutDragGhost({
   kind,
   text,
@@ -22,7 +23,6 @@ export function LayoutDragGhost({
     kind === "partition"
       ? clampPartitionXY(dragOverCm.xCm, dragOverCm.yCm, width, depth, room)
       : clampLabelXY(dragOverCm.xCm, dragOverCm.yCm, room);
-
   if (kind === "partition") {
     return (
       <div
@@ -36,7 +36,6 @@ export function LayoutDragGhost({
       />
     );
   }
-
   return (
     <div
       className="absolute pointer-events-none text-foreground/70 font-medium whitespace-nowrap z-50 outline outline-2 outline-dashed outline-primary/40 rounded px-1"

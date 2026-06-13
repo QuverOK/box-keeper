@@ -24,9 +24,7 @@ import {
   createQrLabelDataUrl,
   downloadQrLabel,
 } from "@/shared/lib/qr-label-image";
-
 const READER_ID = "qr-reader";
-
 interface QRScannerProps {
   onBack: () => void;
   onScanSuccess?: (result: {
@@ -40,12 +38,15 @@ interface QRScannerProps {
   };
   showViewTab?: boolean;
 }
-
 function normalizeDecodedText(text: string): string {
   return text.trim().replace(/\uFEFF/g, "");
 }
-
-async function pickCameraId(): Promise<string | { facingMode: string }> {
+async function pickCameraId(): Promise<
+  | string
+  | {
+      facingMode: string;
+    }
+> {
   try {
     const cameras = await Html5Qrcode.getCameras();
     if (cameras.length === 0) {
@@ -59,7 +60,6 @@ async function pickCameraId(): Promise<string | { facingMode: string }> {
     return { facingMode: "user" };
   }
 }
-
 export function QRScanner({
   onBack,
   onScanSuccess,
@@ -71,7 +71,6 @@ export function QRScanner({
   const processingRef = useRef(false);
   const onScanSuccessRef = useRef(onScanSuccess);
   onScanSuccessRef.current = onScanSuccess;
-
   const [activeTab, setActiveTab] = useState("scan");
   const [scanMode, setScanMode] = useState<"camera" | "photo">("camera");
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -80,7 +79,6 @@ export function QRScanner({
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   const stopScanner = useCallback(async () => {
     const scanner = scannerRef.current;
     if (!scanner) return;
@@ -90,23 +88,19 @@ export function QRScanner({
       }
       scanner.clear();
     } catch {
-      // ignore cleanup errors
+      void 0;
     }
     scannerRef.current = null;
   }, []);
-
   const lookupAndNavigate = useCallback(
     async (decodedText: string) => {
       const callback = onScanSuccessRef.current;
       if (processingRef.current || !callback) return;
-
       const normalized = normalizeDecodedText(decodedText);
       if (!normalized) return;
-
       processingRef.current = true;
       setScanError(null);
       setIsLookingUp(true);
-
       try {
         await stopScanner();
         const result = await fetchPublicBoxByQr(normalized);
@@ -124,23 +118,16 @@ export function QRScanner({
     },
     [stopScanner],
   );
-
   const startScanner = useCallback(async () => {
     if (scanMode !== "camera" || activeTab !== "scan") return;
-
     setCameraError(null);
-
     try {
       await stopScanner();
-
       const container = document.getElementById(READER_ID);
       if (!container) return;
-
       const scanner = new Html5Qrcode(READER_ID, { verbose: false });
       scannerRef.current = scanner;
-
       const cameraId = await pickCameraId();
-
       await scanner.start(
         cameraId,
         {
@@ -162,23 +149,19 @@ export function QRScanner({
       );
     }
   }, [activeTab, lookupAndNavigate, scanMode, stopScanner]);
-
   useEffect(() => {
     if (activeTab !== "scan" || scanMode !== "camera") {
       void stopScanner();
       return;
     }
-
     const timer = window.setTimeout(() => {
       void startScanner();
     }, 300);
-
     return () => {
       window.clearTimeout(timer);
       void stopScanner();
     };
   }, [activeTab, scanMode, startScanner, stopScanner]);
-
   useEffect(() => {
     return () => {
       if (photoPreviewUrl) {
@@ -186,7 +169,6 @@ export function QRScanner({
       }
     };
   }, [photoPreviewUrl]);
-
   useEffect(() => {
     if (!qrCodeData?.qrCodeToken) {
       setQrImageUrl(null);
@@ -196,11 +178,9 @@ export function QRScanner({
       .then(setQrImageUrl)
       .catch(() => setQrImageUrl(null));
   }, [qrCodeData?.qrCodeToken, qrCodeData?.boxName]);
-
   const scanSelectedFile = async (file: File) => {
     setScanError(null);
     setIsLookingUp(true);
-
     try {
       await stopScanner();
       const scanner = new Html5Qrcode("qr-file-scanner", { verbose: false });
@@ -213,23 +193,19 @@ export function QRScanner({
       setIsLookingUp(false);
     }
   };
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-
     if (photoPreviewUrl) {
       URL.revokeObjectURL(photoPreviewUrl);
     }
-
     setSelectedFile(file);
     setPhotoPreviewUrl(URL.createObjectURL(file));
     setScanMode("photo");
     setScanError(null);
     void scanSelectedFile(file);
   };
-
   const resetToCamera = () => {
     if (photoPreviewUrl) {
       URL.revokeObjectURL(photoPreviewUrl);
@@ -240,12 +216,10 @@ export function QRScanner({
     processingRef.current = false;
     setScanMode("camera");
   };
-
   const handleDownloadQR = () => {
     if (!qrImageUrl || !qrCodeData) return;
     downloadQrLabel(qrImageUrl, qrCodeData.boxName);
   };
-
   return (
     <div className="min-h-screen bg-background">
       <div id="qr-file-scanner" className="hidden" aria-hidden />

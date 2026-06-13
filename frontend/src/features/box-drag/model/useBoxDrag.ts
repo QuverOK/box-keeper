@@ -11,13 +11,11 @@ import {
   type XYZone,
   type PartitionDims,
 } from "./placement";
-
 export interface DragRoom {
   widthCm: number;
   depthCm: number;
   heightCm: number;
 }
-
 export interface BoxDragCallbacks {
   onMoveBox: (
     boxId: string,
@@ -26,18 +24,23 @@ export interface BoxDragCallbacks {
     newZ?: number,
   ) => void;
 }
-
 export interface BoxDragState {
   draggedBoxId: string | null;
   hoveredBoxId: string | null;
-  dragOverCm: { xCm: number; yCm: number } | null;
+  dragOverCm: {
+    xCm: number;
+    yCm: number;
+  } | null;
   isStagingDragOver: boolean;
   gridRef: React.RefObject<HTMLDivElement | null>;
   handleDragStart: (
     e: React.DragEvent,
     boxId: string,
     fromCanvas?: boolean,
-    overrideOffsetPx?: { pxX: number; pxY: number },
+    overrideOffsetPx?: {
+      pxX: number;
+      pxY: number;
+    },
   ) => void;
   handleDragEnd: () => void;
   handleGridDragOver: (e: React.DragEvent) => void;
@@ -48,21 +51,26 @@ export interface BoxDragState {
   handleStagingDrop: (e: React.DragEvent) => void;
   setHoveredBoxId: (id: string | null) => void;
 }
-
 interface UseBoxDragOptions {
-  boxes: (BoxDims & { x?: number; y?: number; z?: number })[];
+  boxes: (BoxDims & {
+    x?: number;
+    y?: number;
+    z?: number;
+  })[];
   room: DragRoom;
   callbacks: BoxDragCallbacks;
   forbiddenZoneRef?: React.RefObject<XYZone | null>;
   partitions?: PartitionDims[];
 }
-
 function isPlacedBox(
-  b: BoxDims & { x?: number; y?: number; z?: number },
+  b: BoxDims & {
+    x?: number;
+    y?: number;
+    z?: number;
+  },
 ): b is PlacedBoxDims {
   return b.x !== undefined && b.y !== undefined && b.z !== undefined;
 }
-
 export function useBoxDrag({
   boxes,
   room,
@@ -71,7 +79,6 @@ export function useBoxDrag({
   partitions = [],
 }: UseBoxDragOptions): BoxDragState {
   const { onMoveBox } = callbacks;
-
   const [draggedBoxId, setDraggedBoxId] = useState<string | null>(null);
   const [hoveredBoxId, setHoveredBoxId] = useState<string | null>(null);
   const [dragOverCm, setDragOverCm] = useState<{
@@ -79,41 +86,48 @@ export function useBoxDrag({
     yCm: number;
   } | null>(null);
   const [isStagingDragOver, setIsStagingDragOver] = useState(false);
-
   const gridRef = useRef<HTMLDivElement>(null);
   const dragGrabOffsetRef = useRef({ pxX: 0, pxY: 0 });
   const rafIdRef = useRef<number | null>(null);
-
   const placedBoxes = boxes.filter(isPlacedBox);
-
-  const getCanvasCmFromEvent = (
-    e: React.DragEvent,
-  ): { xCm: number; yCm: number } | null => {
-    if (!gridRef.current) return null;
-    const rect = gridRef.current.getBoundingClientRect();
-    const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
-    const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
-    return {
-      xCm: (topLeftPxX / rect.width) * room.widthCm,
-      yCm: (topLeftPxY / rect.height) * room.depthCm,
-    };
-  };
-
+  const getCanvasCmFromEvent = useCallback(
+    (
+      e: React.DragEvent,
+    ): {
+      xCm: number;
+      yCm: number;
+    } | null => {
+      if (!gridRef.current) return null;
+      const rect = gridRef.current.getBoundingClientRect();
+      const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
+      const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
+      return {
+        xCm: (topLeftPxX / rect.width) * room.widthCm,
+        yCm: (topLeftPxY / rect.height) * room.depthCm,
+      };
+    },
+    [room.widthCm, room.depthCm],
+  );
   const clampPos = (
     xCm: number,
     yCm: number,
     box: BoxDims,
-  ): { xCm: number; yCm: number } => ({
+  ): {
+    xCm: number;
+    yCm: number;
+  } => ({
     xCm: Math.max(0, Math.min(xCm, room.widthCm - box.sizeW)),
     yCm: Math.max(0, Math.min(yCm, room.depthCm - box.sizeD)),
   });
-
   const handleDragStart = useCallback(
     (
       e: React.DragEvent,
       boxId: string,
       fromCanvas = false,
-      overrideOffsetPx?: { pxX: number; pxY: number },
+      overrideOffsetPx?: {
+        pxX: number;
+        pxY: number;
+      },
     ) => {
       if (overrideOffsetPx) {
         dragGrabOffsetRef.current = overrideOffsetPx;
@@ -133,7 +147,6 @@ export function useBoxDrag({
     },
     [],
   );
-
   const handleDragEnd = useCallback(() => {
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
@@ -143,7 +156,6 @@ export function useBoxDrag({
     setDragOverCm(null);
     setIsStagingDragOver(false);
   }, []);
-
   const handleGridDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -151,7 +163,6 @@ export function useBoxDrag({
       setIsStagingDragOver(false);
       if (!gridRef.current) return;
       const rect = gridRef.current.getBoundingClientRect();
-      // Захватываем координаты сразу — event станет недоступен внутри RAF
       const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
       const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
@@ -165,13 +176,11 @@ export function useBoxDrag({
     },
     [room.widthCm, room.depthCm],
   );
-
   const handleGridDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragOverCm(null);
     }
   }, []);
-
   const handleGridDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -179,36 +188,28 @@ export function useBoxDrag({
       setDraggedBoxId(null);
       setDragOverCm(null);
       setIsStagingDragOver(false);
-
       if (!boxId || !gridRef.current) return;
       const draggedBox = boxes.find((b) => b.id === boxId);
       if (!draggedBox) return;
-
       const raw = getCanvasCmFromEvent(e);
       if (!raw) return;
-
-      // If the drop lands inside the forbidden zone (e.g. the box's own open
-      // cluster footprint), cancel the move silently — box stays in the stack.
       if (
         forbiddenZoneRef?.current &&
         overlapsZone(raw.xCm, raw.yCm, draggedBox, forbiddenZoneRef.current)
       ) {
         return;
       }
-
       const result = findNearestValidXY(
         raw.xCm,
         raw.yCm,
         draggedBox,
         placedBoxes,
         room,
-        null, // forbidden zone already handled above; don't redirect to alternatives
+        null,
         partitions,
       );
       if (!result) return;
       onMoveBox(boxId, result.x, result.y, result.z);
-      // If box was already placed, settle any boxes that were resting on it
-      // at its OLD position (they are now floating after the box moved away).
       if (isPlacedBox(draggedBox)) {
         const movedBoxNew: PlacedBoxDims = {
           ...draggedBox,
@@ -219,29 +220,37 @@ export function useBoxDrag({
         const newPlaced = placedBoxes
           .filter((b) => b.id !== boxId)
           .concat(movedBoxNew);
-        for (const u of computeSettleUpdates(draggedBox, newPlaced, partitions)) {
-          if (u.id === boxId) continue; // never re-settle the box we just placed
+        for (const u of computeSettleUpdates(
+          draggedBox,
+          newPlaced,
+          partitions,
+        )) {
+          if (u.id === boxId) continue;
           onMoveBox(u.id, u.x, u.y, u.z);
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boxes, placedBoxes, room, onMoveBox, forbiddenZoneRef, partitions],
+    [
+      boxes,
+      placedBoxes,
+      room,
+      onMoveBox,
+      forbiddenZoneRef,
+      partitions,
+      getCanvasCmFromEvent,
+    ],
   );
-
   const handleStagingDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverCm(null);
     setIsStagingDragOver(true);
   }, []);
-
   const handleStagingDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsStagingDragOver(false);
     }
   }, []);
-
   const handleStagingDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -253,18 +262,13 @@ export function useBoxDrag({
       const box = boxes.find((b) => b.id === boxId);
       if (!box || !isPlacedBox(box)) return;
       onMoveBox(boxId, undefined, undefined, undefined);
-      // Settle boxes that were resting on top of the removed box.
       const newPlaced = placedBoxes.filter((b) => b.id !== boxId);
       for (const u of computeSettleUpdates(box, newPlaced, partitions)) {
         onMoveBox(u.id, u.x, u.y, u.z);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [boxes, placedBoxes, onMoveBox, partitions],
   );
-
-  // Compute ghost placement info for the currently dragged box.
-  // Exposed so the widget can pass it to BoxDragGhost without re-computing.
   const _ = (() => {
     if (!dragOverCm || !draggedBoxId) return null;
     const box = boxes.find((b) => b.id === draggedBoxId);
@@ -276,7 +280,6 @@ export function useBoxDrag({
     return { xCm, yCm, z, roomHeightOk, conflict };
   })();
   void _;
-
   return {
     draggedBoxId,
     hoveredBoxId,

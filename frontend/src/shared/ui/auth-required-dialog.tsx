@@ -8,13 +8,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-
 interface AuthRequiredDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirmLogin: () => void;
 }
-
 export function AuthRequiredDialog({
   open,
   onOpenChange,

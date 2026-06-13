@@ -1,14 +1,11 @@
 const BASE_URL = "/api";
-
 export type QueryParams = Record<
   string,
   string | number | boolean | undefined | null
 >;
-
 export function buildApiUrl(path: string, params?: QueryParams): URL {
   const url = new URL(path, window.location.origin);
   url.pathname = BASE_URL + path;
-
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
@@ -16,15 +13,12 @@ export function buildApiUrl(path: string, params?: QueryParams): URL {
       }
     });
   }
-
   return url;
 }
-
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
-
 async function request<T>(
   method: string,
   path: string,
@@ -32,7 +26,6 @@ async function request<T>(
   params?: QueryParams,
 ): Promise<T> {
   const url = buildApiUrl(path, params);
-
   const res = await fetch(url.toString(), {
     method,
     headers: {
@@ -41,16 +34,13 @@ async function request<T>(
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw { status: res.status, data };
   }
-
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
-
 export const api = {
   get: <T>(path: string, params?: QueryParams) =>
     request<T>("GET", path, undefined, params),

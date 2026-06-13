@@ -9,16 +9,11 @@ import {
 } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { MiniCubeViewer } from "./MiniCubeViewer";
-
 interface Box {
   id: string;
   name: string;
-  /** Physical cm from left wall. undefined = unplaced */
   x?: number;
-  /** Physical cm from front wall. undefined = unplaced */
   y?: number;
-  /** Physical cm from floor. undefined = unplaced */
   z?: number;
   itemCount: number;
   color: string;
@@ -26,39 +21,46 @@ interface Box {
   sizeD: number;
   sizeH: number;
 }
-
-type PlacedBox = Box & { x: number; y: number; z: number };
-
+type PlacedBox = Box & {
+  x: number;
+  y: number;
+  z: number;
+};
 const isPlaced = (box: Box): box is PlacedBox =>
   box.x !== undefined && box.y !== undefined && box.z !== undefined;
-
 type ViewMode = "XY" | "XZ" | "YZ";
-
 interface Storage3DViewProps {
   boxes: Box[];
   onBoxClick: (boxId: string) => void;
   editMode: boolean;
   highlightedBoxId?: string | null;
-  gridSize: { x: number; y: number; z: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
   onMoveBox: (
     boxId: string,
     newX?: number,
     newY?: number,
     newZ?: number,
   ) => void;
-  roomSize: { width: number; depth: number; height: number };
+  roomSize: {
+    width: number;
+    depth: number;
+    height: number;
+  };
 }
-
 export function Storage3DView({
   boxes,
   onBoxClick,
   editMode,
   highlightedBoxId,
-  gridSize,
+  gridSize: _gridSize,
   onMoveBox,
   roomSize,
 }: Storage3DViewProps) {
-  // ─── State ───────────────────────────────────────────────────────────────────
+  void _gridSize;
   const [viewMode, setViewMode] = useState<ViewMode>("XY");
   const [draggedBoxId, setDraggedBoxId] = useState<string | null>(null);
   const [dragOverCm, setDragOverCm] = useState<{
@@ -66,28 +68,16 @@ export function Storage3DView({
     yCm: number;
   } | null>(null);
   const [isStagingDragOver, setIsStagingDragOver] = useState(false);
-  /**
-   * ID of the box shown in the info panel:
-   * - normal mode → set when clicking any box
-   * - edit mode   → set when drag-starting any box
-   */
   const [focusedBoxId, setFocusedBoxId] = useState<string | null>(null);
-
   const gridRef = useRef<HTMLDivElement>(null);
-  /** Pixel offset from dragged element's top-left to cursor — set on drag start */
   const dragGrabOffsetRef = useRef({ pxX: 0, pxY: 0 });
-
-  // ─── Box sets ────────────────────────────────────────────────────────────────
   const placedBoxes = boxes.filter(isPlaced);
   const unplacedBoxes = boxes.filter((b) => !isPlaced(b));
-
-  // ─── Room/canvas dimension helpers ───────────────────────────────────────────
-
-  /**
-   * Returns room dimensions (in metres) for the HORIZONTAL and VERTICAL axes of
-   * the current view, plus the DEPTH axis used by the layer slider.
-   */
-  const getRoomVisDims = (): { wM: number; hM: number; depthM: number } => {
+  const getRoomVisDims = (): {
+    wM: number;
+    hM: number;
+    depthM: number;
+  } => {
     switch (viewMode) {
       case "XY":
         return {
@@ -109,21 +99,17 @@ export function Storage3DView({
         };
     }
   };
-
   const { wM: roomWM, hM: roomHM } = getRoomVisDims();
   const roomWcm = roomWM * 100;
   const roomHcm = roomHM * 100;
   const aspectRatioPct = (roomHM / roomWM) * 100;
-
-  // ─── Box position helpers ────────────────────────────────────────────────────
-
-  /**
-   * Returns the box's position and size along the CANVAS axes (in cm),
-   * plus its value on the DEPTH axis.
-   */
   const getBoxCanvasPos = (
     box: PlacedBox,
-  ): { xCm: number; yCm: number; depth: number } => {
+  ): {
+    xCm: number;
+    yCm: number;
+    depth: number;
+  } => {
     switch (viewMode) {
       case "XY":
         return { xCm: box.x, yCm: box.y, depth: box.z };
@@ -133,11 +119,13 @@ export function Storage3DView({
         return { xCm: box.y, yCm: box.z, depth: box.x };
     }
   };
-
-  /** Box visual (canvas) size in cm for the current view. depthCm = size on depth axis. */
   const getBoxVisualDims = (
     box: Box,
-  ): { wCm: number; hCm: number; depthCm: number } => {
+  ): {
+    wCm: number;
+    hCm: number;
+    depthCm: number;
+  } => {
     switch (viewMode) {
       case "XY":
         return { wCm: box.sizeW, hCm: box.sizeD, depthCm: box.sizeH };
@@ -147,8 +135,6 @@ export function Storage3DView({
         return { wCm: box.sizeD, hCm: box.sizeH, depthCm: box.sizeW };
     }
   };
-
-  /** Extracts the depth-axis physical cm value from a placed box. */
   const getBoxDepthValue = (box: PlacedBox): number => {
     switch (viewMode) {
       case "XY":
@@ -159,8 +145,6 @@ export function Storage3DView({
         return box.x;
     }
   };
-
-  // ─── View labels ─────────────────────────────────────────────────────────────
   const getViewModeLabel = () => {
     switch (viewMode) {
       case "XY":
@@ -171,37 +155,21 @@ export function Storage3DView({
         return "Вид спереди";
     }
   };
-
-  // ─── Visibility & opacity ────────────────────────────────────────────────────
-
-  // Always show all placed boxes
   const visibleBoxes = placedBoxes;
-
-  // Highest Z among ALL placed boxes — used to normalise opacity
   const maxPlacedZ = placedBoxes.reduce((m, b) => Math.max(m, b.z), 0);
-
-  /**
-   * Higher z → more opaque (closer to the viewer when looking down).
-   * When all boxes are on the floor (maxPlacedZ === 0) every box is fully opaque.
-   */
   const getBoxOpacity = (box: PlacedBox): number => {
     if (maxPlacedZ === 0) return 1.0;
-    // Normalise by the highest Z among all placed boxes
     return Math.max(0.3, Math.min(1.0, 0.3 + 0.7 * (box.z / maxPlacedZ)));
   };
-
-  // ─── Placement helpers ────────────────────────────────────────────────────────
-
-  /**
-   * Converts canvas cm position to 3D physical coordinates.
-   * existingDepth: keep the box on its current depth layer (for moves).
-   * undefined: box is placed on the floor (depth = 0) for non-XY views.
-   */
   const getPlacementCoords3D = (
     canvasXCm: number,
     canvasYCm: number,
     existingDepth?: number,
-  ): { x: number; y: number; z: number } => {
+  ): {
+    x: number;
+    y: number;
+    z: number;
+  } => {
     const depth = existingDepth ?? 0;
     switch (viewMode) {
       case "XY":
@@ -212,21 +180,10 @@ export function Storage3DView({
         return { x: depth, y: canvasXCm, z: canvasYCm };
     }
   };
-
-  // ─── Physics stacking helpers ────────────────────────────────────────────────
-
-  /**
-   * Computes the natural resting Z for a box placed at physical (x, y).
-   * Gravity: box rests on the highest surface where ≥60% of its footprint
-   * is supported. Multiple boxes at the same height contribute combined support.
-   * Always view-independent (uses physical X/Y/Z).
-   */
   const computeRestingZ = (x: number, y: number, box: Box): number => {
     const others = placedBoxes.filter((b) => b.id !== box.id);
     const boxArea = box.sizeW * box.sizeD;
-
-    // Accumulate support area per top-surface height
-    const surfaces = new Map<number, number>(); // surfaceZ → total overlap cm²
+    const surfaces = new Map<number, number>();
     for (const b of others) {
       const ow = Math.max(
         0,
@@ -242,9 +199,7 @@ export function Storage3DView({
         surfaces.set(top, (surfaces.get(top) ?? 0) + area);
       }
     }
-
-    // Choose the highest surface with ≥60% combined support
-    let bestZ = 0; // floor is always valid support
+    let bestZ = 0;
     surfaces.forEach((area, surfZ) => {
       if (area / boxArea >= 0.6) {
         bestZ = Math.max(bestZ, surfZ);
@@ -252,11 +207,6 @@ export function Storage3DView({
     });
     return bestZ;
   };
-
-  /**
-   * Returns true if placing box at physical (x, y, z) would 3-D overlap any
-   * other box. Touching edges (strict < / >) are allowed.
-   */
   const has3DConflict = (x: number, y: number, z: number, box: Box): boolean =>
     placedBoxes.some((b) => {
       if (b.id === box.id) return false;
@@ -265,23 +215,24 @@ export function Storage3DView({
       const zOk = z < b.z + b.sizeH && z + box.sizeH > b.z;
       return xOk && yOk && zOk;
     });
-
-  /**
-   * Searches outward from (desiredX, desiredY) in XY canvas space to find
-   * the nearest valid placement respecting stacking physics and room bounds.
-   * Only used for XY view (gravity is along Z in XY view).
-   */
   const findNearestValidXY = (
     desiredX: number,
     desiredY: number,
     box: Box,
-  ): { x: number; y: number; z: number } | null => {
+  ): {
+    x: number;
+    y: number;
+    z: number;
+  } | null => {
     const roomHeightCm = roomSize.height * 100;
-
     const tryPos = (
       rx: number,
       ry: number,
-    ): { x: number; y: number; z: number } | null => {
+    ): {
+      x: number;
+      y: number;
+      z: number;
+    } | null => {
       const cx = Math.max(0, Math.min(rx, roomWcm - box.sizeW));
       const cy = Math.max(0, Math.min(ry, roomHcm - box.sizeD));
       const z = computeRestingZ(cx, cy, box);
@@ -289,11 +240,8 @@ export function Storage3DView({
       if (has3DConflict(cx, cy, z, box)) return null;
       return { x: cx, y: cy, z };
     };
-
     const exact = tryPos(desiredX, desiredY);
     if (exact) return exact;
-
-    // Spiral outward in 5 cm steps, up to 200 cm radius
     for (let radius = 5; radius <= 200; radius += 5) {
       const numAngles = Math.max(8, Math.round((2 * Math.PI * radius) / 5));
       for (let i = 0; i < numAngles; i++) {
@@ -307,15 +255,14 @@ export function Storage3DView({
     }
     return null;
   };
-
-  // ─── Canvas mouse position → cm ──────────────────────────────────────────────
-
   const getCanvasCmFromEvent = (
     e: React.DragEvent,
-  ): { xCm: number; yCm: number } | null => {
+  ): {
+    xCm: number;
+    yCm: number;
+  } | null => {
     if (!gridRef.current) return null;
     const rect = gridRef.current.getBoundingClientRect();
-    // Apply grab offset so the box's top-left follows the cursor correctly
     const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
     const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
     return {
@@ -323,26 +270,20 @@ export function Storage3DView({
       yCm: (topLeftPxY / rect.height) * roomHcm,
     };
   };
-
-  /** Clamp box position so it stays within room bounds. */
   const clampPos = (
     xCm: number,
     yCm: number,
     box: Box,
-  ): { xCm: number; yCm: number } => {
+  ): {
+    xCm: number;
+    yCm: number;
+  } => {
     const { wCm, hCm } = getBoxVisualDims(box);
     return {
       xCm: Math.max(0, Math.min(xCm, roomWcm - wCm)),
       yCm: Math.max(0, Math.min(yCm, roomHcm - hCm)),
     };
   };
-
-  // ─── Drag events ─────────────────────────────────────────────────────────────
-
-  /**
-   * fromCanvas = true  → record actual pixel grab offset from the box element
-   * fromCanvas = false → staging card; use (0,0) so box top-left lands at cursor
-   */
   const handleDragStart = (
     e: React.DragEvent,
     boxId: string,
@@ -358,19 +299,15 @@ export function Storage3DView({
       dragGrabOffsetRef.current = { pxX: 0, pxY: 0 };
     }
     setDraggedBoxId(boxId);
-    // Show info panel for the box being dragged (edit mode behaviour)
     setFocusedBoxId(boxId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", boxId);
   };
-
   const handleDragEnd = () => {
     setDraggedBoxId(null);
     setDragOverCm(null);
     setIsStagingDragOver(false);
-    // Keep focusedBoxId so the panel stays visible after the drag
   };
-
   const handleGridDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -387,34 +324,27 @@ export function Storage3DView({
     },
     [roomWcm, roomHcm],
   );
-
   const handleGridDragLeave = (e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragOverCm(null);
     }
   };
-
   const handleGridDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const boxId = e.dataTransfer.getData("text/plain");
     setDraggedBoxId(null);
     setDragOverCm(null);
     setIsStagingDragOver(false);
-
     if (!boxId || !gridRef.current) return;
     const draggedBox = boxes.find((b) => b.id === boxId);
     if (!draggedBox) return;
-
     const raw = getCanvasCmFromEvent(e);
     if (!raw) return;
-
     if (viewMode === "XY") {
-      // ── XY: gravity determines Z (stacking physics) ──────────────────────
       const result = findNearestValidXY(raw.xCm, raw.yCm, draggedBox);
-      if (!result) return; // room is completely full (unlikely)
+      if (!result) return;
       onMoveBox(boxId, result.x, result.y, result.z);
     } else {
-      // ── XZ / YZ: user sets position explicitly, check for conflict ────────
       const { xCm, yCm } = clampPos(raw.xCm, raw.yCm, draggedBox);
       const existingDepth = isPlaced(draggedBox)
         ? getBoxDepthValue(draggedBox)
@@ -423,7 +353,6 @@ export function Storage3DView({
       const roomHeightCm = roomSize.height * 100;
       if (z + draggedBox.sizeH > roomHeightCm) return;
       if (has3DConflict(x, y, z, draggedBox)) {
-        // Snap to nearest valid in physical XY space
         const snapped = findNearestValidXY(x, y, draggedBox);
         if (snapped) onMoveBox(boxId, snapped.x, snapped.y, snapped.z);
         return;
@@ -431,22 +360,17 @@ export function Storage3DView({
       onMoveBox(boxId, x, y, z);
     }
   };
-
-  // ─── Staging drag handlers ───────────────────────────────────────────────────
-
   const handleStagingDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverCm(null);
     setIsStagingDragOver(true);
   };
-
   const handleStagingDragLeave = (e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsStagingDragOver(false);
     }
   };
-
   const handleStagingDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const boxId = e.dataTransfer.getData("text/plain");
@@ -458,13 +382,9 @@ export function Storage3DView({
     if (!box || !isPlaced(box)) return;
     onMoveBox(boxId, undefined, undefined, undefined);
   };
-
-  // ─── Ghost indicator ──────────────────────────────────────────────────────────
-
   const draggedBoxDisplay = boxes.find((b) => b.id === draggedBoxId);
   const draggedBoxPlaced =
     draggedBoxDisplay && isPlaced(draggedBoxDisplay) ? draggedBoxDisplay : null;
-
   const ghost = (() => {
     if (!editMode || !dragOverCm || !draggedBoxDisplay) return null;
     const { wCm, hCm } = getBoxVisualDims(draggedBoxDisplay);
@@ -473,10 +393,8 @@ export function Storage3DView({
       dragOverCm.yCm,
       draggedBoxDisplay,
     );
-
     let hasCollision = false;
     let stackLabel: string | null = null;
-
     if (viewMode === "XY") {
       const z = computeRestingZ(xCm, yCm, draggedBoxDisplay);
       const roomHeightCm = roomSize.height * 100;
@@ -494,23 +412,16 @@ export function Storage3DView({
       const { x, y, z } = getPlacementCoords3D(xCm, yCm, existingDepth);
       hasCollision = has3DConflict(x, y, z, draggedBoxDisplay);
     }
-
     return {
       leftPct: (xCm / roomWcm) * 100,
       topPct: (yCm / roomHcm) * 100,
       widthPct: (wCm / roomWcm) * 100,
       heightPct: (hCm / roomHcm) * 100,
       hasCollision,
-      stackLabel, // shown when box would stack on top of another
+      stackLabel,
     };
   })();
-
-  // ─── Focused box (for info panel) ────────────────────────────────────────────
-
   const focusedBox = boxes.find((b) => b.id === focusedBoxId) ?? null;
-
-  // ─── CSS style for a placed box on the canvas ─────────────────────────────────
-
   const boxCanvasStyle = (box: Box, xCm: number, yCm: number) => {
     const { wCm, hCm } = getBoxVisualDims(box);
     return {
@@ -520,12 +431,8 @@ export function Storage3DView({
       height: `${(hCm / roomHcm) * 100}%`,
     };
   };
-
-  // ─── JSX ─────────────────────────────────────────────────────────────────────
-
   return (
     <div className="space-y-4">
-      {/* ── View Mode Controls ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-4 items-center justify-between bg-white p-4 rounded-lg border">
         <div className="flex gap-2">
           <Button
@@ -536,29 +443,11 @@ export function Storage3DView({
             <Layers className="w-4 h-4" />
             Сверху (XY)
           </Button>
-          {/* <Button
-            variant={viewMode === "XZ" ? "default" : "outline"}
-            onClick={() => setViewMode("XZ")}
-            className="gap-2"
-          >
-            <Layers className="w-4 h-4 rotate-90" />
-            Сбоку (XZ)
-          </Button>
-          <Button
-            variant={viewMode === "YZ" ? "default" : "outline"}
-            onClick={() => setViewMode("YZ")}
-            className="gap-2"
-          >
-            <Layers className="w-4 h-4 -rotate-90" />
-            Спереди (YZ)
-          </Button> */}
         </div>
       </div>
 
-      {/* ── Grid + Mini Viewer ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
         <div className="space-y-4">
-          {/* ── Staging area ──────────────────────────────────────────────── */}
           <Card
             className={[
               "p-4 transition-colors duration-150",
@@ -670,7 +559,6 @@ export function Storage3DView({
             )}
           </Card>
 
-          {/* ── Main canvas card ──────────────────────────────────────────── */}
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -683,17 +571,12 @@ export function Storage3DView({
               )}
             </div>
 
-            {/*
-              Outer div establishes aspect ratio via padding-bottom trick.
-              clamp(280px, X%, 580px) keeps the canvas in a usable height range.
-            */}
             <div
               className="relative w-full"
               style={{
                 paddingBottom: `clamp(280px, ${aspectRatioPct.toFixed(2)}%, 580px)`,
               }}
             >
-              {/* White canvas — receives drop events */}
               <div
                 ref={gridRef}
                 className="absolute inset-0 bg-white rounded-lg border border-gray-200 overflow-hidden"
@@ -701,7 +584,6 @@ export function Storage3DView({
                 onDragLeave={editMode ? handleGridDragLeave : undefined}
                 onDrop={editMode ? handleGridDrop : undefined}
               >
-                {/* ── Ghost drop preview ──────────────────────────────── */}
                 {ghost && (
                   <div
                     className={[
@@ -728,13 +610,11 @@ export function Storage3DView({
                   </div>
                 )}
 
-                {/* ── Placed boxes ─────────────────────────────────────── */}
                 {visibleBoxes.map((box) => {
                   const opacity = getBoxOpacity(box);
                   if (opacity === 0) return null;
                   const isDragging = draggedBoxId === box.id;
                   const { xCm, yCm } = getBoxCanvasPos(box);
-
                   return (
                     <div
                       key={box.id}
@@ -782,7 +662,6 @@ export function Storage3DView({
                   );
                 })}
 
-                {/* Empty canvas hint */}
                 {visibleBoxes.length === 0 && !ghost && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <p className="text-sm text-gray-300 select-none">
@@ -795,7 +674,6 @@ export function Storage3DView({
               </div>
             </div>
 
-            {/* Legend */}
             {editMode ? (
               <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm text-amber-800 mb-1 font-semibold">
@@ -841,17 +719,12 @@ export function Storage3DView({
           </Card>
         </div>
 
-        {/* ── Right sidebar: cube viewer + box info ──────────────────────── */}
         <div className="lg:sticky lg:top-4 h-fit flex flex-col gap-4 w-56">
-          {/* <MiniCubeViewer viewMode={viewMode} gridSize={gridSize} /> */}
-
-          {/* Box info panel */}
           {focusedBox ? (
             <Card
               className="p-4 border-l-4 transition-all duration-200"
               style={{ borderLeftColor: focusedBox.color }}
             >
-              {/* Header: swatch + name + close */}
               <div className="flex items-start gap-2 mb-3">
                 <div
                   className="w-8 h-8 rounded-md flex-shrink-0 flex items-center justify-center border border-black/10 mt-0.5"
@@ -871,7 +744,6 @@ export function Storage3DView({
                 </button>
               </div>
 
-              {/* Details */}
               <div className="space-y-1.5 text-xs text-gray-500 mb-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Размер</span>

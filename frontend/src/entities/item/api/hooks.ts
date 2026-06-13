@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/api/client";
 import { BOXES_KEY, ITEMS_KEY, STORAGES_KEY } from "@/shared/api/query-keys";
 import type { Item } from "../model/types";
-
 function invalidateItemRelatedQueries(
   qc: ReturnType<typeof useQueryClient>,
   boxId: string,
@@ -16,7 +15,6 @@ function invalidateItemRelatedQueries(
     qc.invalidateQueries({ queryKey: [ITEMS_KEY, "detail", itemId] });
   }
 }
-
 export function useItems(boxId: string) {
   return useQuery<Item[]>({
     queryKey: [ITEMS_KEY, boxId],
@@ -24,7 +22,6 @@ export function useItems(boxId: string) {
     enabled: !!boxId,
   });
 }
-
 export function useItem(itemId: string) {
   return useQuery<Item>({
     queryKey: [ITEMS_KEY, "detail", itemId],
@@ -32,14 +29,12 @@ export function useItem(itemId: string) {
     enabled: !!itemId,
   });
 }
-
 interface CreateItemInput {
   name: string;
   category: string;
   description?: string;
   photo?: string;
 }
-
 export function useCreateItem(boxId: string, storageId: string) {
   const qc = useQueryClient();
   return useMutation<Item, Error, CreateItemInput>({
@@ -47,7 +42,6 @@ export function useCreateItem(boxId: string, storageId: string) {
     onSuccess: () => invalidateItemRelatedQueries(qc, boxId, storageId),
   });
 }
-
 export function useUpdateItem(
   itemId: string,
   boxId: string,
@@ -59,7 +53,6 @@ export function useUpdateItem(
     onSuccess: () => invalidateItemRelatedQueries(qc, boxId, storageId, itemId),
   });
 }
-
 export function useDeleteItem(boxId: string, storageId: string) {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({

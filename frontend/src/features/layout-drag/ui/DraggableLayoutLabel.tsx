@@ -1,7 +1,6 @@
 import { GripVertical } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import type { LayoutDragItem } from "../model/useLayoutDrag";
-
 export interface DraggableLayoutLabelProps {
   id: string;
   text: string;
@@ -16,7 +15,6 @@ export interface DraggableLayoutLabelProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
-
 export function DraggableLayoutLabel({
   text,
   fontSize,

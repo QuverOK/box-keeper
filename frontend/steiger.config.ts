@@ -1,6 +1,5 @@
 import { defineConfig } from "steiger";
 import fsd from "@feature-sliced/steiger-plugin";
-
 export default defineConfig([
   ...fsd.configs.recommended,
   {
@@ -15,22 +14,17 @@ export default defineConfig([
     },
   },
   {
-    // features/box-drag contains substantial independent logic (placement physics,
-    // drag-image suppression, color utilities) with its own unit tests. The
-    // insignificant-slice warning is suppressed because the slice may grow to be
-    // consumed by additional widgets (e.g. a mobile canvas view) in the future.
     files: [
       "./src/features/box-drag/**",
       "./src/features/box-validation/**",
       "./src/features/layout-drag/**",
+      "./src/features/bulk-items/**",
     ],
     rules: {
       "fsd/insignificant-slice": "off",
     },
   },
   {
-    // Widget slices use a consistent *-view naming convention (box-view, item-view,
-    // storage-view) to distinguish composite UI blocks from pages and features.
     files: ["./src/widgets/**"],
     rules: {
       "fsd/repetitive-naming": "off",

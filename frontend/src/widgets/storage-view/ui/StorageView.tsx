@@ -14,15 +14,17 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
-
 const boxListVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.04 } },
 };
-
 const boxCardVariants = {
   hidden: { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: "easeOut" as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: "easeOut" as const },
+  },
 };
 import {
   Dialog,
@@ -56,14 +58,12 @@ import {
 import { searchStorageBoxes, type StorageSearchResult } from "../model/search";
 import { LayoutEditControls } from "./LayoutEditControls";
 import type { Partition, LayoutLabel } from "@/shared/model";
-
 interface BoxItem {
   id: string;
   name: string;
   category: string;
   description?: string;
 }
-
 interface Box {
   id: string;
   name: string;
@@ -77,11 +77,9 @@ interface Box {
   sizeD: number;
   sizeH: number;
 }
-
 interface SearchResult extends StorageSearchResult {
   box: Box;
 }
-
 interface StorageViewProps {
   storageName: string;
   boxes: Box[];
@@ -92,7 +90,11 @@ interface StorageViewProps {
     sizeW: number,
     sizeD: number,
     sizeH: number,
-    items?: Array<{ name: string; category: string; description?: string }>,
+    items?: Array<{
+      name: string;
+      category: string;
+      description?: string;
+    }>,
   ) => void | Promise<void>;
   onMoveBox: (
     boxId: string,
@@ -100,8 +102,16 @@ interface StorageViewProps {
     newY?: number,
     newZ?: number,
   ) => void;
-  gridSize: { x: number; y: number; z: number };
-  roomSize: { width: number; depth: number; height: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  roomSize: {
+    width: number;
+    depth: number;
+    height: number;
+  };
   readOnly?: boolean;
   onRequireAuth?: () => void;
   highlightBoxId?: string;
@@ -132,7 +142,6 @@ interface StorageViewProps {
     roomHeight?: number;
   }) => Promise<void>;
 }
-
 export function StorageView({
   storageName,
   boxes,
@@ -155,7 +164,6 @@ export function StorageView({
   onMoveLayoutLabel,
   onUpdateStorage,
 }: StorageViewProps) {
-  // ── Box dialog ────────────────────────────────────────────────────────────
   const [newBoxName, setNewBoxName] = useState("");
   const [boxSizeW, setBoxSizeW] = useState("");
   const [boxSizeD, setBoxSizeD] = useState("");
@@ -172,52 +180,42 @@ export function StorageView({
   const [isSavingStorage, setIsSavingStorage] = useState(false);
   const effectiveEditMode = readOnly ? false : editMode;
   const effectiveLayoutEditMode = readOnly ? false : layoutEditMode;
-
   const promptAuth = () => setAuthDialogOpen(true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isCreatingBox, setIsCreatingBox] = useState(false);
   const [draftItems, setDraftItems] = useState<DraftItem[]>([
     createEmptyDraftItem(),
   ]);
-
   const availableCategories = useMemo(
     () => extractStorageCategories(boxes),
     [boxes],
   );
-
-  // ── Search ────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightedBoxId, setHighlightedBoxId] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-
   const searchResults = useMemo<SearchResult[]>(() => {
     return searchStorageBoxes(boxes, searchQuery).map((r) => ({
       ...r,
       box: r.box as Box,
     }));
   }, [searchQuery, boxes]);
-
   const hasActiveSearch = searchQuery.trim().length > 0;
   const matchingBoxIds = useMemo(
     () => new Set(searchResults.map((r) => r.box.id)),
     [searchResults],
   );
-
   const handleSearchContainerBlur = (e: React.FocusEvent) => {
     if (!searchContainerRef.current?.contains(e.relatedTarget as Node)) {
       setSearchOpen(false);
       setHighlightedBoxId(null);
     }
   };
-
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
     setHighlightedBoxId(null);
   };
-
-  // ── Room dimensions ───────────────────────────────────────────────────────
   const effectiveRoomSize = useMemo(() => {
     if (!effectiveEditMode) {
       return roomSize;
@@ -236,11 +234,9 @@ export function StorageView({
     draftRoomHeight,
     roomSize,
   ]);
-
   const roomWcm = Math.round(effectiveRoomSize.width * 100);
   const roomDcm = Math.round(effectiveRoomSize.depth * 100);
   const roomHcm = Math.round(effectiveRoomSize.height * 100);
-
   const validateBox = (
     name: string,
     w: number,
@@ -273,7 +269,6 @@ export function StorageView({
     }
     return null;
   };
-
   const handleAddBox = async () => {
     const w = parseFloat(boxSizeW);
     const d = parseFloat(boxSizeD);
@@ -294,7 +289,6 @@ export function StorageView({
       setIsCreatingBox(false);
     }
   };
-
   const resetDialog = () => {
     setNewBoxName("");
     setBoxSizeW("");
@@ -304,18 +298,15 @@ export function StorageView({
     setValidationError(null);
     setIsDialogOpen(false);
   };
-
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) resetDialog();
   };
-
   const handleEditModeToggle = async () => {
     if (readOnly) {
       promptAuth();
       return;
     }
-
     if (!editMode) {
       setDraftName(storageName);
       setDraftRoomWidth(String(roomSize.width));
@@ -325,25 +316,21 @@ export function StorageView({
       setEditMode(true);
       return;
     }
-
     const trimmedName = draftName.trim();
     const w = parseFloat(draftRoomWidth);
     const d = parseFloat(draftRoomDepth);
     const h = parseFloat(draftRoomHeight);
-
     const nameChanged = trimmedName !== storageName;
     const widthChanged = w !== roomSize.width;
     const depthChanged = d !== roomSize.depth;
     const heightChanged = h !== roomSize.height;
     const isDirty =
       nameChanged || widthChanged || depthChanged || heightChanged;
-
     if (!isDirty) {
       setEditMode(false);
       setStorageEditError(null);
       return;
     }
-
     if (!trimmedName) {
       setStorageEditError("Введите название хранилища");
       return;
@@ -372,7 +359,6 @@ export function StorageView({
       setStorageEditError("Высота не может превышать 5 м");
       return;
     }
-
     const newRoom = {
       roomWidth: w,
       roomDepth: d,
@@ -394,13 +380,11 @@ export function StorageView({
       );
       return;
     }
-
     if (!onUpdateStorage) {
       setEditMode(false);
       setStorageEditError(null);
       return;
     }
-
     const payload: {
       name?: string;
       roomWidth?: number;
@@ -411,7 +395,6 @@ export function StorageView({
     if (widthChanged) payload.roomWidth = w;
     if (depthChanged) payload.roomDepth = d;
     if (heightChanged) payload.roomHeight = h;
-
     setIsSavingStorage(true);
     try {
       await onUpdateStorage(payload);
@@ -423,7 +406,6 @@ export function StorageView({
       setIsSavingStorage(false);
     }
   };
-
   const handleAddBoxClick = () => {
     if (readOnly) {
       promptAuth();
@@ -431,13 +413,10 @@ export function StorageView({
     }
     setIsDialogOpen(true);
   };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="bg-card border-b sm:sticky sm:top-0 sm:z-30">
         <div className="page-container py-4 space-y-3">
-          {/* Row 1: back + title */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="w-5 h-5" />
@@ -561,15 +540,12 @@ export function StorageView({
             </div>
           )}
 
-          {/* Row 2: search + buttons */}
           <div className="flex flex-wrap gap-2 items-center">
-            {/* ── Search ── */}
             <div
               ref={searchContainerRef}
               className="relative flex-1 min-w-0"
               onBlur={handleSearchContainerBlur}
             >
-              {/* Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <Input
@@ -590,7 +566,6 @@ export function StorageView({
                 )}
               </div>
 
-              {/* Dropdown */}
               <AnimatePresence>
                 {searchOpen && searchQuery.trim() && (
                   <motion.div
@@ -672,10 +647,8 @@ export function StorageView({
                 )}
               </AnimatePresence>
             </div>
-            {/* end search container */}
 
             <div className="flex gap-2 flex-shrink-0 max-[400px]:w-full max-[400px]:[&_button]:flex-1">
-              {/* ── Add box ── */}
               <Dialog
                 open={readOnly ? false : isDialogOpen}
                 onOpenChange={handleDialogOpenChange}
@@ -821,7 +794,6 @@ export function StorageView({
                 <span className="hidden min-[401px]:inline">Планировка</span>
               </Button>
 
-              {/* ── Edit mode ── */}
               <Button
                 variant={effectiveEditMode ? "default" : "outline"}
                 className="gap-2 flex-shrink-0"
@@ -840,11 +812,9 @@ export function StorageView({
               </Button>
             </div>
           </div>
-          {/* end row 2 */}
         </div>
       </header>
 
-      {/* ── Main Content ─────────────────────────────────────────────────────── */}
       <main className="page-container py-6 mt-3">
         <Tabs defaultValue="3d" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -938,7 +908,10 @@ export function StorageView({
                   <motion.div
                     key={box.id}
                     variants={boxCardVariants}
-                    whileHover={{ y: -2, boxShadow: "0 6px 20px rgba(0,0,0,0.09)" }}
+                    whileHover={{
+                      y: -2,
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.09)",
+                    }}
                     transition={{ type: "spring", stiffness: 300, damping: 22 }}
                   >
                     <Card
@@ -1002,7 +975,6 @@ export function StorageView({
         </Tabs>
       </main>
 
-      {/* ── Mobile floating action buttons ───────────────────────────────── */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col gap-2 sm:hidden">
         <Button
           size="icon"

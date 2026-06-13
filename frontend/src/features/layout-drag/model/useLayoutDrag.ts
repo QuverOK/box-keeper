@@ -1,25 +1,24 @@
 import { useState, useRef, useCallback } from "react";
 import { getTransparentDragImage } from "@/shared/lib/drag-image";
 import { clampLabelXY, clampPartitionXY, type LayoutRoom } from "./clamp";
-
 export const LAYOUT_PARTITION_PREFIX = "layout-partition:";
 export const LAYOUT_LABEL_PREFIX = "layout-label:";
-
 export interface LayoutDragItem {
   kind: "partition" | "label";
   id: string;
   width?: number;
   depth?: number;
 }
-
 export interface LayoutDragCallbacks {
   onMovePartition: (id: string, x: number, y: number) => void;
   onMoveLayoutLabel: (id: string, x: number, y: number) => void;
 }
-
 export interface LayoutDragState {
   draggedItem: LayoutDragItem | null;
-  dragOverCm: { xCm: number; yCm: number } | null;
+  dragOverCm: {
+    xCm: number;
+    yCm: number;
+  } | null;
   hoveredItemId: string | null;
   gridRef: React.RefObject<HTMLDivElement | null>;
   handleDragStart: (e: React.DragEvent, item: LayoutDragItem) => void;
@@ -29,14 +28,16 @@ export interface LayoutDragState {
   handleGridDrop: (e: React.DragEvent) => void;
   setHoveredItemId: (id: string | null) => void;
 }
-
 interface UseLayoutDragOptions {
   room: LayoutRoom;
-  partitions: { id: string; width: number; depth: number }[];
+  partitions: {
+    id: string;
+    width: number;
+    depth: number;
+  }[];
   callbacks: LayoutDragCallbacks;
   gridRef: React.RefObject<HTMLDivElement | null>;
 }
-
 function parseDragPayload(data: string): LayoutDragItem | null {
   if (data.startsWith(LAYOUT_PARTITION_PREFIX)) {
     return {
@@ -49,7 +50,6 @@ function parseDragPayload(data: string): LayoutDragItem | null {
   }
   return null;
 }
-
 export function useLayoutDrag({
   room,
   partitions,
@@ -63,9 +63,13 @@ export function useLayoutDrag({
     yCm: number;
   } | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
-
   const getCanvasCmFromEvent = useCallback(
-    (e: React.DragEvent): { xCm: number; yCm: number } | null => {
+    (
+      e: React.DragEvent,
+    ): {
+      xCm: number;
+      yCm: number;
+    } | null => {
       if (!gridRef.current) return null;
       const rect = gridRef.current.getBoundingClientRect();
       const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
@@ -77,7 +81,6 @@ export function useLayoutDrag({
     },
     [room.widthCm, room.depthCm],
   );
-
   const handleDragStart = useCallback(
     (e: React.DragEvent, item: LayoutDragItem) => {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -96,12 +99,10 @@ export function useLayoutDrag({
     },
     [],
   );
-
   const handleDragEnd = useCallback(() => {
     setDraggedItem(null);
     setDragOverCm(null);
   }, []);
-
   const handleGridDragOver = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -117,13 +118,11 @@ export function useLayoutDrag({
     },
     [room.widthCm, room.depthCm],
   );
-
   const handleGridDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragOverCm(null);
     }
   }, []);
-
   const handleGridDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -132,10 +131,8 @@ export function useLayoutDrag({
       setDraggedItem(null);
       setDragOverCm(null);
       if (!payload) return;
-
       const raw = getCanvasCmFromEvent(e);
       if (!raw) return;
-
       if (payload.kind === "partition") {
         const partition = partitions.find((p) => p.id === payload.id);
         if (!partition) return;
@@ -149,13 +146,11 @@ export function useLayoutDrag({
         callbacks.onMovePartition(payload.id, xCm, yCm);
         return;
       }
-
       const { xCm, yCm } = clampLabelXY(raw.xCm, raw.yCm, room);
       callbacks.onMoveLayoutLabel(payload.id, xCm, yCm);
     },
     [getCanvasCmFromEvent, partitions, room, callbacks],
   );
-
   return {
     draggedItem,
     dragOverCm,

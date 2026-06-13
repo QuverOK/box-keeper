@@ -92,6 +92,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "steiger": "steiger ./src"
+    "steiger": "steiger ./src",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
   }
 }

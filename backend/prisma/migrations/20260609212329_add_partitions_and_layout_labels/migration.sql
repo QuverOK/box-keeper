@@ -1,4 +1,3 @@
--- CreateTable
 CREATE TABLE "Partition" (
     "id" TEXT NOT NULL,
     "storageId" TEXT NOT NULL,
@@ -14,7 +13,6 @@ CREATE TABLE "Partition" (
     CONSTRAINT "Partition_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
 CREATE TABLE "LayoutLabel" (
     "id" TEXT NOT NULL,
     "storageId" TEXT NOT NULL,
@@ -27,8 +25,6 @@ CREATE TABLE "LayoutLabel" (
     CONSTRAINT "LayoutLabel_pkey" PRIMARY KEY ("id")
 );
 
--- AddForeignKey
 ALTER TABLE "Partition" ADD CONSTRAINT "Partition_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "LayoutLabel" ADD CONSTRAINT "LayoutLabel_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;

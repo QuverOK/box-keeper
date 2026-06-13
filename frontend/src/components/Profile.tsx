@@ -15,13 +15,11 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { useState } from "react";
 import { api } from "@/shared/api/client";
 import { normalizeApiError } from "@/shared/api/errors";
-
 interface ProfileProps {
   userEmail: string;
   onBack: () => void;
   onLogout: () => void;
 }
-
 const PASSWORD_RULES = [
   { label: "Минимум 6 символов", test: (pw: string) => pw.length >= 6 },
   {
@@ -33,11 +31,9 @@ const PASSWORD_RULES = [
     test: (pw: string) => /[^a-zA-Zа-яА-ЯёЁ0-9]/.test(pw),
   },
 ];
-
 function isPasswordValid(pw: string) {
   return PASSWORD_RULES.every((r) => r.test(pw));
 }
-
 function PasswordChecklist({ password }: { password: string }) {
   return (
     <ul className="mt-2 space-y-1">
@@ -60,7 +56,6 @@ function PasswordChecklist({ password }: { password: string }) {
     </ul>
   );
 }
-
 export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -70,9 +65,7 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
   const userInitials = userEmail.substring(0, 2).toUpperCase();
-
   const handleCancelPasswordChange = () => {
     setIsChangingPassword(false);
     setCurrentPassword("");
@@ -82,7 +75,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
     setFormError("");
     setSuccessMessage("");
   };
-
   const handleChangePassword = async () => {
     setFormError("");
     if (!currentPassword) {
@@ -98,7 +90,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
       setFormError("Пароли не совпадают");
       return;
     }
-
     setIsSaving(true);
     try {
       await api.post("/auth/change-password", {
@@ -118,10 +109,8 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
       setIsSaving(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="page-container py-4">
           <div className="flex items-center gap-4">
@@ -135,7 +124,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="page-container py-8 max-w-2xl">
         <motion.div
           className="space-y-6"
@@ -143,7 +131,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
         >
-          {/* User Info Card */}
           <Card>
             <CardHeader>
               <CardTitle>Информация профиля</CardTitle>
@@ -154,7 +141,12 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, type: "spring", stiffness: 200, damping: 18 }}
+                  transition={{
+                    duration: 0.3,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 18,
+                  }}
                 >
                   <Avatar className="w-20 h-20">
                     <AvatarFallback className="bg-blue-600 text-white text-xl">
@@ -166,10 +158,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
                   <p className="text-sm text-gray-500">Email</p>
                   <p className="text-lg break-all">{userEmail}</p>
                 </div>
-                {/* <Button variant="outline" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  Изменить фото
-                </Button> */}
               </div>
 
               <Separator />
@@ -192,7 +180,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
             </CardContent>
           </Card>
 
-          {/* Security Card */}
           <Card>
             <CardHeader>
               <CardTitle>Безопасность</CardTitle>
@@ -326,7 +313,6 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
             </CardContent>
           </Card>
 
-          {/* Logout */}
           <Card>
             <CardContent className="pt-6">
               <Button

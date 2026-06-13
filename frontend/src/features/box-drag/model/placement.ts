@@ -4,13 +4,11 @@ export interface BoxDims {
   sizeD: number;
   sizeH: number;
 }
-
 export interface PlacedBoxDims extends BoxDims {
   x: number;
   y: number;
   z: number;
 }
-
 export interface PartitionDims {
   id: string;
   x: number;
@@ -20,7 +18,6 @@ export interface PartitionDims {
   depth: number;
   height: number;
 }
-
 function footprintOverlapArea(
   x: number,
   y: number,
@@ -40,8 +37,6 @@ function footprintOverlapArea(
   );
   return overlapW * overlapD;
 }
-
-/** True when box footprint overlaps any partition footprint on the floor plan. */
 export function overlapsPartitionFootprint(
   x: number,
   y: number,
@@ -52,8 +47,6 @@ export function overlapsPartitionFootprint(
     (p) => footprintOverlapArea(x, y, box, p.x, p.y, p.width, p.depth) > 0,
   );
 }
-
-/** True when box footprint sits in a gap between two partitions that is too narrow. */
 export function isInPartitionGap(
   x: number,
   y: number,
@@ -81,25 +74,18 @@ export function isInPartitionGap(
   }
   return false;
 }
-
-/**
- * Computes the natural resting Z for a box at physical (x, y).
- * Gravity: the box rests on the highest surface where ≥60% of its footprint
- * is supported. Multiple boxes at the same height contribute combined support.
- * Always view-independent (uses physical X/Y/Z).
- */
 export function computeRestingZ(
   x: number,
   y: number,
   box: BoxDims,
   placedBoxes: PlacedBoxDims[],
-  _partitions: PartitionDims[] = [],
+  partitions: PartitionDims[] = [],
   maxSupportZ?: number,
 ): number {
+  void partitions;
   const others = placedBoxes.filter((b) => b.id !== box.id);
   const boxArea = box.sizeW * box.sizeD;
-
-  const surfaces = new Map<number, number>(); // surfaceZ → total overlap cm²
+  const surfaces = new Map<number, number>();
   for (const b of others) {
     const area = footprintOverlapArea(x, y, box, b.x, b.y, b.sizeW, b.sizeD);
     if (area > 0) {
@@ -108,7 +94,6 @@ export function computeRestingZ(
       surfaces.set(top, (surfaces.get(top) ?? 0) + area);
     }
   }
-
   let bestZ = 0;
   surfaces.forEach((area, surfZ) => {
     if (area / boxArea >= 0.6) {
@@ -117,16 +102,12 @@ export function computeRestingZ(
   });
   return bestZ;
 }
-
-/** A rectangular XY region (cm) that boxes are not allowed to be dropped onto. */
 export interface XYZone {
   x: number;
   y: number;
   w: number;
   d: number;
 }
-
-/** True if a box at (x, y) would overlap the forbidden XY zone. */
 export function overlapsZone(
   x: number,
   y: number,
@@ -138,11 +119,6 @@ export function overlapsZone(
   const yOk = y < zone.y + zone.d && y + box.sizeD > zone.y;
   return xOk && yOk;
 }
-
-/**
- * Returns true if placing box at physical (x, y, z) would 3-D overlap any
- * other box. Touching edges are allowed.
- */
 export function has3DConflict(
   x: number,
   y: number,
@@ -166,15 +142,10 @@ export function has3DConflict(
     return xOk && yOk && zOk;
   });
 }
-
 export interface BoxStack {
-  /** Boxes in the column, sorted by z ascending (bottom → top). */
   boxes: PlacedBoxDims[];
-  /** id of the visually top-most box (max z + sizeH). */
   topBoxId: string;
 }
-
-/** XY footprint overlap area (cm²) between two placed boxes. */
 function xyOverlapArea(a: PlacedBoxDims, b: PlacedBoxDims): number {
   const ow = Math.max(
     0,
@@ -186,9 +157,7 @@ function xyOverlapArea(a: PlacedBoxDims, b: PlacedBoxDims): number {
   );
   return ow * od;
 }
-
 const STACK_Z_EPSILON_CM = 0.5;
-
 function areVerticallyAdjacent(a: PlacedBoxDims, b: PlacedBoxDims): boolean {
   const aTop = a.z + a.sizeH;
   const bTop = b.z + b.sizeH;
@@ -197,17 +166,9 @@ function areVerticallyAdjacent(a: PlacedBoxDims, b: PlacedBoxDims): boolean {
     Math.abs(bTop - a.z) <= STACK_Z_EPSILON_CM
   );
 }
-
-/**
- * Groups placed boxes into vertical "stacks" (columns). Two boxes belong to the
- * same column when their XY footprints overlap by ≥60% of the smaller footprint
- * AND they are vertically adjacent (one rests on the other). Only columns with
- * ≥2 boxes are returned.
- */
 export function computeStacks(placedBoxes: PlacedBoxDims[]): BoxStack[] {
   const n = placedBoxes.length;
   const parent = placedBoxes.map((_, i) => i);
-
   const find = (i: number): number => {
     let root = i;
     while (parent[root] !== root) root = parent[root];
@@ -218,13 +179,11 @@ export function computeStacks(placedBoxes: PlacedBoxDims[]): BoxStack[] {
     }
     return root;
   };
-
   const union = (a: number, b: number): void => {
     const ra = find(a);
     const rb = find(b);
     if (ra !== rb) parent[ra] = rb;
   };
-
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const a = placedBoxes[i];
@@ -240,7 +199,6 @@ export function computeStacks(placedBoxes: PlacedBoxDims[]): BoxStack[] {
         union(i, j);
     }
   }
-
   const groups = new Map<number, PlacedBoxDims[]>();
   for (let i = 0; i < n; i++) {
     const root = find(i);
@@ -248,7 +206,6 @@ export function computeStacks(placedBoxes: PlacedBoxDims[]): BoxStack[] {
     arr.push(placedBoxes[i]);
     groups.set(root, arr);
   }
-
   const stacks: BoxStack[] = [];
   groups.forEach((boxes) => {
     if (boxes.length < 2) return;
@@ -264,26 +221,18 @@ export function computeStacks(placedBoxes: PlacedBoxDims[]): BoxStack[] {
     }
     stacks.push({ boxes: sorted, topBoxId });
   });
-
   return stacks;
 }
-
-/**
- * After a box is removed from its old position, some boxes that were stacked
- * on top of it may now be floating (z-gap below them). This function computes
- * the settled z for each such box from bottom to top (cascade-safe) and
- * returns the list of boxes whose z must be updated.
- *
- * @param movedBoxOldPos  The position the box occupied BEFORE being moved.
- * @param newPlacedBoxes  All placed boxes AFTER the move (moved box must already
- *                        be excluded from its old position; add it at the new
- *                        position if it was a canvas→canvas move).
- */
 export function computeSettleUpdates(
   movedBoxOldPos: PlacedBoxDims,
   newPlacedBoxes: PlacedBoxDims[],
   partitions: PartitionDims[] = [],
-): Array<{ id: string; x: number; y: number; z: number }> {
+): Array<{
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+}> {
   const affected = newPlacedBoxes.filter((b) => {
     const xOk =
       b.x < movedBoxOldPos.x + movedBoxOldPos.sizeW &&
@@ -293,14 +242,15 @@ export function computeSettleUpdates(
       b.y + b.sizeD > movedBoxOldPos.y;
     return xOk && yOk && b.z > movedBoxOldPos.z;
   });
-
   if (affected.length === 0) return [];
-
   affected.sort((a, b) => a.z - b.z);
-
   const settledList = [...newPlacedBoxes];
-  const updates: Array<{ id: string; x: number; y: number; z: number }> = [];
-
+  const updates: Array<{
+    id: string;
+    x: number;
+    y: number;
+    z: number;
+  }> = [];
   for (const ab of affected) {
     const newZ = computeRestingZ(ab.x, ab.y, ab, settledList, partitions, ab.z);
     if (Math.abs(newZ - ab.z) > STACK_Z_EPSILON_CM) {
@@ -309,27 +259,33 @@ export function computeSettleUpdates(
       if (idx >= 0) settledList[idx] = { ...ab, z: newZ };
     }
   }
-
   return updates;
 }
-
-/**
- * Searches outward from (desiredX, desiredY) to find the nearest valid XY
- * placement respecting stacking physics and room bounds.
- */
 export function findNearestValidXY(
   desiredX: number,
   desiredY: number,
   box: BoxDims,
   placedBoxes: PlacedBoxDims[],
-  room: { widthCm: number; depthCm: number; heightCm: number },
+  room: {
+    widthCm: number;
+    depthCm: number;
+    heightCm: number;
+  },
   forbiddenZone?: XYZone | null,
   partitions: PartitionDims[] = [],
-): { x: number; y: number; z: number } | null {
+): {
+  x: number;
+  y: number;
+  z: number;
+} | null {
   const tryPos = (
     rx: number,
     ry: number,
-  ): { x: number; y: number; z: number } | null => {
+  ): {
+    x: number;
+    y: number;
+    z: number;
+  } | null => {
     const cx = Math.max(0, Math.min(rx, room.widthCm - box.sizeW));
     const cy = Math.max(0, Math.min(ry, room.depthCm - box.sizeD));
     if (overlapsZone(cx, cy, box, forbiddenZone)) return null;
@@ -340,15 +296,8 @@ export function findNearestValidXY(
     if (has3DConflict(cx, cy, z, box, placedBoxes, partitions)) return null;
     return { x: cx, y: cy, z };
   };
-
   const exact = tryPos(desiredX, desiredY);
   if (exact) return exact;
-
-  // Before the spiral, try placing immediately beside the bounding box of all
-  // footprint-blocking boxes (the "cluster"). This snaps the box to the nearest
-  // cluster edge rather than letting the spiral wander to an unexpected position.
-  // Use the clamped position (same as tryPos) so that out-of-bounds cursor
-  // coordinates near a wall still trigger the snap correctly.
   const cDesiredX = Math.max(0, Math.min(desiredX, room.widthCm - box.sizeW));
   const cDesiredY = Math.max(0, Math.min(desiredY, room.depthCm - box.sizeD));
   const blocking = placedBoxes.filter((b) => {
@@ -378,7 +327,6 @@ export function findNearestValidXY(
       if (result) return result;
     }
   }
-
   for (let radius = 5; radius <= 200; radius += 5) {
     const numAngles = Math.max(8, Math.round((2 * Math.PI * radius) / 5));
     for (let i = 0; i < numAngles; i++) {

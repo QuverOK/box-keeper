@@ -31,7 +31,6 @@ export function CategoryCombobox({
 }: CategoryComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-
   const trimmedSearch = search.trim();
   const showCustomOption =
     trimmedSearch.length > 0 &&

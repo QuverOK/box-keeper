@@ -1,18 +1,12 @@
-// Domain types mirroring the Prisma schema.
-// These are the source of truth for the entities layer.
-
-/** Maximum storage room dimensions in metres. */
 export const MAX_ROOM_WIDTH = 30;
 export const MAX_ROOM_DEPTH = 30;
 export const MAX_ROOM_HEIGHT = 5;
-
 export interface User {
   id: string;
   email: string;
   name: string | null;
   createdAt: string;
 }
-
 export interface Storage {
   id: string;
   name: string;
@@ -28,7 +22,6 @@ export interface Storage {
   partitions?: Partition[];
   layoutLabels?: LayoutLabel[];
 }
-
 export interface Partition {
   id: string;
   storageId: string;
@@ -41,7 +34,6 @@ export interface Partition {
   label: string | null;
   createdAt: string;
 }
-
 export interface LayoutLabel {
   id: string;
   storageId: string;
@@ -51,7 +43,6 @@ export interface LayoutLabel {
   fontSize: number;
   createdAt: string;
 }
-
 export interface Box {
   id: string;
   name: string;
@@ -67,7 +58,6 @@ export interface Box {
   createdAt: string;
   items?: Item[];
 }
-
 export interface Item {
   id: string;
   name: string;
@@ -77,7 +67,6 @@ export interface Item {
   boxId: string;
   createdAt: string;
 }
-
 export interface AuthResponse {
   access_token: string;
   user: User;

@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-
 interface QRScannerProps {
   onBack: () => void;
   qrCodeData?: {
@@ -17,23 +16,17 @@ interface QRScannerProps {
     qrCodeUrl: string;
   };
 }
-
 export function QRScanner({ onBack, qrCodeData }: QRScannerProps) {
   const handleDownloadQR = () => {
     if (qrCodeData?.qrCodeUrl) {
-      // In a real app, this would trigger a download
       console.log("Downloading QR code...");
     }
   };
-
   const handleScanQR = () => {
-    // In a real app, this would open the camera
     console.log("Opening camera for QR scan...");
   };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -48,7 +41,6 @@ export function QRScanner({ onBack, qrCodeData }: QRScannerProps) {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Tabs defaultValue="scan" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -71,7 +63,6 @@ export function QRScanner({ onBack, qrCodeData }: QRScannerProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Camera placeholder */}
                 <div className="aspect-square bg-gray-900 rounded-lg flex items-center justify-center mb-4">
                   <div className="text-center text-white">
                     <Camera className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -107,19 +98,15 @@ export function QRScanner({ onBack, qrCodeData }: QRScannerProps) {
               <CardContent>
                 {qrCodeData ? (
                   <>
-                    {/* QR Code Display */}
                     <div className="bg-card p-8 rounded-lg border-2 border-border mb-4">
                       <div className="aspect-square bg-white dark:bg-white flex items-center justify-center rounded">
-                        {/* Placeholder QR code - in real app would be actual QR */}
                         <svg
                           viewBox="0 0 200 200"
                           className="w-full h-full"
                           xmlns="http://www.w3.org/2000/svg"
                         >
-                          {/* Simple QR code pattern */}
                           <rect width="200" height="200" fill="white" />
                           <g fill="black">
-                            {/* Corner patterns */}
                             <rect x="10" y="10" width="60" height="60" />
                             <rect
                               x="20"
@@ -150,7 +137,6 @@ export function QRScanner({ onBack, qrCodeData }: QRScannerProps) {
                             />
                             <rect x="30" y="150" width="20" height="20" />
 
-                            {/* Random pattern */}
                             {Array.from({ length: 50 }).map((_, i) => (
                               <rect
                                 key={i}

@@ -1,12 +1,9 @@
 import * as React from "react";
-
 import { Input } from "./input";
 import { cn } from "./utils";
-
 type UnitInputProps = React.ComponentProps<typeof Input> & {
   unit: string;
 };
-
 const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
   ({ unit, className, ...props }, ref) => {
     return (
@@ -23,5 +20,4 @@ const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
   },
 );
 UnitInput.displayName = "UnitInput";
-
 export { UnitInput };

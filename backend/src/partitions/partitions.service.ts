@@ -7,14 +7,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreatePartitionDto } from "./dto/create-partition.dto";
 import { UpdatePartitionDto } from "./dto/update-partition.dto";
-
 @Injectable()
 export class PartitionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storagesService: StoragesService,
   ) {}
-
   private assertFitsStorage(
     dto: {
       x: number;
@@ -24,7 +22,11 @@ export class PartitionsService {
       depth: number;
       height: number;
     },
-    storage: { roomWidth: number; roomDepth: number; roomHeight: number },
+    storage: {
+      roomWidth: number;
+      roomDepth: number;
+      roomHeight: number;
+    },
   ) {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
@@ -40,7 +42,6 @@ export class PartitionsService {
       throw new ConflictException("Перегородка выходит за пределы помещения");
     }
   }
-
   async create(storageId: string, userId: string, dto: CreatePartitionDto) {
     const storage = await this.storagesService.findOne(storageId, userId);
     this.assertFitsStorage(dto, storage);
@@ -48,7 +49,6 @@ export class PartitionsService {
       data: { ...dto, storageId },
     });
   }
-
   async findAll(storageId: string, userId: string) {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.partition.findMany({
@@ -56,7 +56,6 @@ export class PartitionsService {
       orderBy: { createdAt: "asc" },
     });
   }
-
   async update(id: string, userId: string, dto: UpdatePartitionDto) {
     const existing = await this.prisma.partition.findUnique({
       where: { id },
@@ -75,7 +74,6 @@ export class PartitionsService {
     this.assertFitsStorage(merged, existing.storage);
     return this.prisma.partition.update({ where: { id }, data: dto });
   }
-
   async remove(id: string, userId: string) {
     const existing = await this.prisma.partition.findUnique({
       where: { id },

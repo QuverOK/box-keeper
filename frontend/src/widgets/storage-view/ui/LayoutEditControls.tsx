@@ -14,11 +14,14 @@ import { Label } from "@/shared/ui/label";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { normalizeApiError } from "@/shared/api";
 import type { Partition, LayoutLabel } from "@/shared/model";
-
 interface LayoutEditControlsProps {
   partitions: Partition[];
   layoutLabels: LayoutLabel[];
-  roomSize: { width: number; depth: number; height: number };
+  roomSize: {
+    width: number;
+    depth: number;
+    height: number;
+  };
   onCreatePartition: (data: {
     x: number;
     y: number;
@@ -36,13 +39,14 @@ interface LayoutEditControlsProps {
   }) => Promise<void>;
   onDeleteLabel: (id: string) => Promise<void>;
 }
-
 const DEFAULT_PART_WIDTH = 100;
 const DEFAULT_PART_DEPTH = 40;
 const DEFAULT_PART_HEIGHT = 5;
-
 function centerPartitionXY(
-  roomSize: { width: number; depth: number },
+  roomSize: {
+    width: number;
+    depth: number;
+  },
   width: number,
   depth: number,
 ) {
@@ -53,13 +57,11 @@ function centerPartitionXY(
     y: Math.max(0, (roomDcm - depth) / 2),
   };
 }
-
 function centerLabelXY(roomSize: { width: number; depth: number }) {
   const roomWcm = roomSize.width * 100;
   const roomDcm = roomSize.depth * 100;
   return { x: roomWcm / 2, y: roomDcm / 2 };
 }
-
 export function LayoutEditControls({
   partitions,
   layoutLabels,
@@ -83,7 +85,6 @@ export function LayoutEditControls({
   const [lText, setLText] = useState("");
   const [partError, setPartError] = useState<string | null>(null);
   const [labelError, setLabelError] = useState<string | null>(null);
-
   const resetPartitionForm = () => {
     const center = centerPartitionXY(
       roomSize,
@@ -98,14 +99,12 @@ export function LayoutEditControls({
     setPh(String(DEFAULT_PART_HEIGHT));
     setPLabel("");
   };
-
   const resetLabelForm = () => {
     const center = centerLabelXY(roomSize);
     setLx(String(Math.round(center.x)));
     setLy(String(Math.round(center.y)));
     setLText("");
   };
-
   const submitPartition = async () => {
     setPartError(null);
     try {
@@ -123,7 +122,6 @@ export function LayoutEditControls({
       setPartError(normalizeApiError(err).message);
     }
   };
-
   const submitLabel = async () => {
     if (!lText.trim()) return;
     setLabelError(null);
@@ -139,7 +137,6 @@ export function LayoutEditControls({
       setLabelError(normalizeApiError(err).message);
     }
   };
-
   return (
     <div className="flex flex-wrap gap-2 items-center">
       <Dialog

@@ -1,16 +1,17 @@
 type ViewMode = "XY" | "XZ" | "YZ";
-
 interface MiniCubeViewerProps {
   viewMode: ViewMode;
-  gridSize: { x: number; y: number; z: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
 }
-
 export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
   return (
     <div className="bg-white p-4 rounded-lg border shadow-sm">
       <p className="text-xs text-gray-600 mb-2 text-center">Текущий вид</p>
       <svg width="140" height="140" viewBox="0 0 140 140" className="mx-auto">
-        {/* Define isometric projection */}
         <defs>
           <linearGradient id="topFace" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop
@@ -44,9 +45,7 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
           </linearGradient>
         </defs>
 
-        {/* Isometric cube */}
         <g transform="translate(70, 40)">
-          {/* Top face (XY plane) */}
           <path
             d="M 0,0 L 35,-20 L 0,-40 L -35,-20 Z"
             fill="url(#topFace)"
@@ -54,7 +53,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
             strokeWidth={viewMode === "XY" ? "2" : "1"}
           />
 
-          {/* Front face (YZ plane) */}
           <path
             d="M -35,-20 L 0,-40 L 0,0 L -35,20 Z"
             fill="url(#frontFace)"
@@ -62,7 +60,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
             strokeWidth={viewMode === "YZ" ? "2" : "1"}
           />
 
-          {/* Side face (XZ plane) */}
           <path
             d="M 0,0 L 35,-20 L 35,20 L 0,40 Z"
             fill="url(#sideFace)"
@@ -70,9 +67,7 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
             strokeWidth={viewMode === "XZ" ? "2" : "1"}
           />
 
-          {/* Axes labels */}
           <g>
-            {/* X axis */}
             <line
               x1="0"
               y1="40"
@@ -86,7 +81,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
               X
             </text>
 
-            {/* Y axis */}
             <line
               x1="0"
               y1="40"
@@ -100,7 +94,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
               Y
             </text>
 
-            {/* Z axis */}
             <line
               x1="0"
               y1="40"
@@ -115,7 +108,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
             </text>
           </g>
 
-          {/* Arrow markers */}
           <defs>
             <marker
               id="arrowX"
@@ -153,7 +145,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
           </defs>
         </g>
 
-        {/* View indicator */}
         <g transform="translate(70, 115)">
           <text
             x="0"
@@ -170,7 +161,6 @@ export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
         </g>
       </svg>
 
-      {/* Grid size info */}
       <div className="mt-2 text-center">
         <p className="text-xs text-gray-500">
           Размер: {gridSize.x}×{gridSize.y}×{gridSize.z}

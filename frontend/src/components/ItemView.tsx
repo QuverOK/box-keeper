@@ -24,7 +24,6 @@ import {
   clampItemDescription,
   MAX_ITEM_DESCRIPTION_LENGTH,
 } from "@/entities/item";
-
 export interface ItemViewProps {
   item: {
     id: string;
@@ -45,7 +44,6 @@ export interface ItemViewProps {
   readOnly?: boolean;
   onRequireAuth?: () => void;
 }
-
 export function ItemView({
   item,
   onBack,
@@ -65,11 +63,8 @@ export function ItemView({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const promptAuth = () => setAuthDialogOpen(true);
-
   const startEditing = () => {
     if (readOnly) {
       promptAuth();
@@ -82,7 +77,6 @@ export function ItemView({
     setNameError(false);
     setIsEditing(true);
   };
-
   const handleSave = async () => {
     if (!editName.trim()) {
       setNameError(true);
@@ -104,7 +98,6 @@ export function ItemView({
       setIsSaving(false);
     }
   };
-
   const handleCancel = () => {
     setEditName(item.name);
     setEditCategory(item.category);
@@ -113,7 +106,6 @@ export function ItemView({
     setNameError(false);
     setIsEditing(false);
   };
-
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -128,12 +120,9 @@ export function ItemView({
     }
     e.target.value = "";
   };
-
   const displayPhoto = isEditing ? editPhoto : item.photo;
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="page-container py-4">
           <div className="flex flex-wrap items-center gap-4">
@@ -219,7 +208,6 @@ export function ItemView({
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="page-container py-8 max-w-2xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -237,13 +225,14 @@ export function ItemView({
                   transition={{ duration: 0.15 }}
                 >
                   <CardTitle>
-                    {isEditing ? "Редактирование предмета" : "Информация о предмете"}
+                    {isEditing
+                      ? "Редактирование предмета"
+                      : "Информация о предмете"}
                   </CardTitle>
                 </motion.div>
               </AnimatePresence>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Photo */}
               <div className="space-y-2">
                 <Label>Фото</Label>
                 {displayPhoto ? (
@@ -280,7 +269,9 @@ export function ItemView({
                   <motion.button
                     type="button"
                     onClick={
-                      isEditing ? () => fileInputRef.current?.click() : undefined
+                      isEditing
+                        ? () => fileInputRef.current?.click()
+                        : undefined
                     }
                     disabled={!isEditing}
                     className="w-full border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center gap-2 text-muted-foreground transition-colors disabled:cursor-default enabled:hover:border-muted-foreground enabled:hover:text-foreground enabled:cursor-pointer"
@@ -312,7 +303,6 @@ export function ItemView({
 
               {saveError && <p className="text-sm text-red-600">{saveError}</p>}
 
-              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="item-name">Название</Label>
                 <AnimatePresence mode="wait" initial={false}>
@@ -360,7 +350,6 @@ export function ItemView({
                 </AnimatePresence>
               </div>
 
-              {/* Category */}
               <div className="space-y-2">
                 <Label htmlFor="item-category">Категория</Label>
                 <AnimatePresence mode="wait" initial={false}>
@@ -390,14 +379,15 @@ export function ItemView({
                       transition={{ duration: 0.15 }}
                     >
                       {item.category || (
-                        <span className="text-muted-foreground">Не указана</span>
+                        <span className="text-muted-foreground">
+                          Не указана
+                        </span>
                       )}
                     </motion.p>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="item-description">Описание</Label>
                 <AnimatePresence mode="wait" initial={false}>
@@ -414,7 +404,9 @@ export function ItemView({
                         value={editDescription}
                         maxLength={MAX_ITEM_DESCRIPTION_LENGTH}
                         onChange={(e) =>
-                          setEditDescription(clampItemDescription(e.target.value))
+                          setEditDescription(
+                            clampItemDescription(e.target.value),
+                          )
                         }
                         placeholder="Дополнительная информация о предмете"
                         rows={4}
@@ -433,7 +425,9 @@ export function ItemView({
                       transition={{ duration: 0.15 }}
                     >
                       {item.description || (
-                        <span className="text-muted-foreground">Нет описания</span>
+                        <span className="text-muted-foreground">
+                          Нет описания
+                        </span>
                       )}
                     </motion.p>
                   )}

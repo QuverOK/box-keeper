@@ -1,12 +1,13 @@
 type ViewMode = "XY" | "XZ" | "YZ";
-
 interface MiniCubeViewerProps {
   viewMode: ViewMode;
-  gridSize: { x: number; y: number; z: number };
+  gridSize: {
+    x: number;
+    y: number;
+    z: number;
+  };
 }
-
 const inactiveStroke = "var(--muted-foreground)";
-
 export function MiniCubeViewer({ viewMode, gridSize }: MiniCubeViewerProps) {
   return (
     <div className="bg-card p-4 rounded-lg border border-border shadow-sm">

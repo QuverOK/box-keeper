@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import type { User } from "./types";
-
 interface UserStore {
   user: User | null;
   token: string | null;
@@ -8,7 +7,6 @@ interface UserStore {
   setUser: (user: User) => void;
   clearAuth: () => void;
 }
-
 export const useUserStore = create<UserStore>((set) => ({
   user: null,
   token: localStorage.getItem("access_token"),

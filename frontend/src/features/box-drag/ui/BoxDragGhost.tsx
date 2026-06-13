@@ -10,17 +10,21 @@ import {
   type XYZone,
   type PartitionDims,
 } from "../model/placement";
-
 interface BoxDragGhostProps {
   draggedBox: BoxDims;
-  dragOverCm: { xCm: number; yCm: number };
+  dragOverCm: {
+    xCm: number;
+    yCm: number;
+  };
   placedBoxes: PlacedBoxDims[];
-  room: { widthCm: number; depthCm: number; heightCm: number };
-  /** When set, dropping over this zone is rejected (e.g. own open cluster). */
+  room: {
+    widthCm: number;
+    depthCm: number;
+    heightCm: number;
+  };
   forbiddenZone?: XYZone | null;
   partitions?: PartitionDims[];
 }
-
 export function BoxDragGhost({
   draggedBox,
   dragOverCm,
@@ -37,43 +41,49 @@ export function BoxDragGhost({
     0,
     Math.min(dragOverCm.yCm, room.depthCm - draggedBox.sizeD),
   );
-
-  const { z, conflict, inForbiddenZone, onPartition, stackLabel } =
-    useMemo(() => {
-      const restZ = computeRestingZ(
-        xCm,
-        yCm,
-        draggedBox,
-        placedBoxes,
-        partitions,
-      );
-      const roomHeightOk = restZ + draggedBox.sizeH <= room.heightCm;
-      const forbidden = overlapsZone(xCm, yCm, draggedBox, forbiddenZone);
-      const partition = overlapsPartitionFootprint(
-        xCm,
-        yCm,
-        draggedBox,
-        partitions,
-      );
-      // Forbidden zone is a "return to stack" cancel — not a red conflict.
-      const hasConflict =
-        !roomHeightOk ||
-        partition ||
-        (!forbidden && has3DConflict(xCm, yCm, restZ, draggedBox, placedBoxes, partitions));
-      return {
-        z: restZ,
-        conflict: hasConflict,
-        inForbiddenZone: forbidden,
-        onPartition: partition,
-        stackLabel: !hasConflict && !forbidden && restZ > 0 ? `↑${Math.round(restZ + draggedBox.sizeH)} см` : null,
-      };
-    }, [xCm, yCm, draggedBox, placedBoxes, forbiddenZone, partitions, room.heightCm]);
-
+  const { conflict, inForbiddenZone, onPartition, stackLabel } = useMemo(() => {
+    const restZ = computeRestingZ(
+      xCm,
+      yCm,
+      draggedBox,
+      placedBoxes,
+      partitions,
+    );
+    const roomHeightOk = restZ + draggedBox.sizeH <= room.heightCm;
+    const forbidden = overlapsZone(xCm, yCm, draggedBox, forbiddenZone);
+    const partition = overlapsPartitionFootprint(
+      xCm,
+      yCm,
+      draggedBox,
+      partitions,
+    );
+    const hasConflict =
+      !roomHeightOk ||
+      partition ||
+      (!forbidden &&
+        has3DConflict(xCm, yCm, restZ, draggedBox, placedBoxes, partitions));
+    return {
+      conflict: hasConflict,
+      inForbiddenZone: forbidden,
+      onPartition: partition,
+      stackLabel:
+        !hasConflict && !forbidden && restZ > 0
+          ? `↑${Math.round(restZ + draggedBox.sizeH)} см`
+          : null,
+    };
+  }, [
+    xCm,
+    yCm,
+    draggedBox,
+    placedBoxes,
+    forbiddenZone,
+    partitions,
+    room.heightCm,
+  ]);
   const leftPct = (xCm / room.widthCm) * 100;
   const topPct = (yCm / room.depthCm) * 100;
   const widthPct = (draggedBox.sizeW / room.widthCm) * 100;
   const heightPct = (draggedBox.sizeD / room.depthCm) * 100;
-
   return (
     <div
       className={cn(

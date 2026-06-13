@@ -4,9 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 import { AuthService } from "./auth.service";
 import { PrismaService } from "../prisma/prisma.service";
-
 const hashedPassword = bcrypt.hashSync("correct-password", 10);
-
 const mockUser = {
   id: "user-1",
   email: "test@example.com",
@@ -14,7 +12,6 @@ const mockUser = {
   passwordHash: hashedPassword,
   createdAt: new Date(),
 };
-
 const mockPrisma = {
   user: {
     findUnique: jest.fn(),
@@ -26,14 +23,11 @@ const mockPrisma = {
     }),
   },
 };
-
 const mockJwt = {
   sign: jest.fn().mockReturnValue("mock-jwt-token"),
 };
-
 describe("AuthService", () => {
   let service: AuthService;
-
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -43,14 +37,11 @@ describe("AuthService", () => {
         { provide: JwtService, useValue: mockJwt },
       ],
     }).compile();
-
     service = module.get<AuthService>(AuthService);
   });
-
   it("should be defined", () => {
     expect(service).toBeDefined();
   });
-
   describe("register", () => {
     it("registers a new user and returns token", async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(null);
@@ -62,7 +53,6 @@ describe("AuthService", () => {
       expect(result.access_token).toBe("mock-jwt-token");
       expect(result.user.email).toBe(mockUser.email);
     });
-
     it("throws ConflictException when email already exists", async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(mockUser);
       await expect(
@@ -74,7 +64,6 @@ describe("AuthService", () => {
       ).rejects.toThrow(ConflictException);
     });
   });
-
   describe("login", () => {
     it("returns token on successful login", async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(mockUser);
@@ -84,14 +73,12 @@ describe("AuthService", () => {
       });
       expect(result.access_token).toBe("mock-jwt-token");
     });
-
     it("throws UnauthorizedException when email does not exist", async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(null);
       await expect(
         service.login({ email: "ghost@example.com", password: "any" }),
       ).rejects.toThrow(UnauthorizedException);
     });
-
     it("throws UnauthorizedException when password is wrong", async () => {
       mockPrisma.user.findUnique.mockResolvedValueOnce(mockUser);
       await expect(

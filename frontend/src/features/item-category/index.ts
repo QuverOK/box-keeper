@@ -1,3 +1,3 @@
 export { extractStorageCategories } from "./model/extract-categories";
-export { CategoryCombobox } from "./ui/CategoryCombobox";
-export type { CategoryComboboxProps } from "./ui/CategoryCombobox";
+export { CategoryCombobox } from "@/entities/item";
+export type { CategoryComboboxProps } from "@/entities/item";

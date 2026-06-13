@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/api/client";
 import { BOXES_KEY, STORAGES_KEY } from "@/shared/api/query-keys";
 import type { Box } from "../model/types";
-
 export function useBoxes(storageId: string) {
   return useQuery<Box[]>({
     queryKey: [BOXES_KEY, storageId],
@@ -10,7 +9,6 @@ export function useBoxes(storageId: string) {
     enabled: !!storageId,
   });
 }
-
 export function useBox(boxId: string) {
   return useQuery<Box>({
     queryKey: [BOXES_KEY, "detail", boxId],
@@ -18,7 +16,6 @@ export function useBox(boxId: string) {
     enabled: !!boxId,
   });
 }
-
 interface CreateBoxInput {
   name: string;
   sizeW: number;
@@ -26,7 +23,6 @@ interface CreateBoxInput {
   sizeH: number;
   color?: string;
 }
-
 export function useCreateBox(storageId: string) {
   const qc = useQueryClient();
   return useMutation<Box, Error, CreateBoxInput>({
@@ -37,7 +33,6 @@ export function useCreateBox(storageId: string) {
     },
   });
 }
-
 export function useUpdateBox(boxId: string, storageId: string) {
   const qc = useQueryClient();
   return useMutation<Box, Error, Partial<CreateBoxInput>>({
@@ -49,13 +44,11 @@ export function useUpdateBox(boxId: string, storageId: string) {
     },
   });
 }
-
 interface MoveBoxInput {
   posX?: number | null;
   posY?: number | null;
   posZ?: number | null;
 }
-
 export function useMoveBox(boxId: string, storageId: string) {
   const qc = useQueryClient();
   return useMutation<Box, Error, MoveBoxInput>({
@@ -66,10 +59,15 @@ export function useMoveBox(boxId: string, storageId: string) {
     },
   });
 }
-
 export function useMoveAnyBox(storageId: string) {
   const qc = useQueryClient();
-  return useMutation<Box, Error, { boxId: string } & MoveBoxInput>({
+  return useMutation<
+    Box,
+    Error,
+    {
+      boxId: string;
+    } & MoveBoxInput
+  >({
     mutationFn: ({ boxId, ...data }) =>
       api.patch<Box>(`/boxes/${boxId}/position`, data),
     onSuccess: () => {
@@ -78,7 +76,6 @@ export function useMoveAnyBox(storageId: string) {
     },
   });
 }
-
 export function useDeleteBox(storageId: string) {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({

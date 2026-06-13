@@ -7,18 +7,19 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreateLayoutLabelDto } from "./dto/create-layout-label.dto";
 import { UpdateLayoutLabelDto } from "./dto/update-layout-label.dto";
-
 @Injectable()
 export class LayoutLabelsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storagesService: StoragesService,
   ) {}
-
   private assertInRoom(
     x: number,
     y: number,
-    storage: { roomWidth: number; roomDepth: number },
+    storage: {
+      roomWidth: number;
+      roomDepth: number;
+    },
   ) {
     const roomWcm = storage.roomWidth * 100;
     const roomDcm = storage.roomDepth * 100;
@@ -26,7 +27,6 @@ export class LayoutLabelsService {
       throw new ConflictException("Подпись выходит за пределы помещения");
     }
   }
-
   async create(storageId: string, userId: string, dto: CreateLayoutLabelDto) {
     const storage = await this.storagesService.findOne(storageId, userId);
     this.assertInRoom(dto.x, dto.y, storage);
@@ -40,7 +40,6 @@ export class LayoutLabelsService {
       },
     });
   }
-
   async findAll(storageId: string, userId: string) {
     await this.storagesService.findOne(storageId, userId);
     return this.prisma.layoutLabel.findMany({
@@ -48,7 +47,6 @@ export class LayoutLabelsService {
       orderBy: { createdAt: "asc" },
     });
   }
-
   async update(id: string, userId: string, dto: UpdateLayoutLabelDto) {
     const existing = await this.prisma.layoutLabel.findUnique({
       where: { id },
@@ -61,7 +59,6 @@ export class LayoutLabelsService {
     this.assertInRoom(x, y, existing.storage);
     return this.prisma.layoutLabel.update({ where: { id }, data: dto });
   }
-
   async remove(id: string, userId: string) {
     const existing = await this.prisma.layoutLabel.findUnique({
       where: { id },

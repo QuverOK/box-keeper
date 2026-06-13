@@ -2,14 +2,12 @@ import React from "react";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/cn";
 import { darkenColor, getBorderColor } from "../lib/color";
-
 export interface DraggableBoxProps {
   id: string;
   color: string;
   editMode: boolean;
   isDragging: boolean;
   isHovered: boolean;
-  /** When any box is being dragged, disable pointer events so drop targets get events. */
   anyDragActive: boolean;
   style?: React.CSSProperties;
   className?: string;
@@ -21,7 +19,6 @@ export interface DraggableBoxProps {
   onClick?: () => void;
   children?: React.ReactNode;
 }
-
 export function DraggableBox({
   color,
   editMode,
@@ -42,7 +39,6 @@ export function DraggableBox({
     editMode && isHovered && !isDragging
       ? `inset 0 0 0 2px ${darkenColor(color, 0.35)}`
       : undefined;
-
   return (
     <Card
       className={cn(

@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { computeRestingZ, boxFitsInStorage, isPlaced } from "./placement";
 import type { PlacedBox } from "./placement";
 import type { Box } from "@/shared/model";
-
 const makePlacedBox = (overrides: Partial<PlacedBox>): PlacedBox => ({
   id: "b1",
   name: "Box",
@@ -18,7 +17,6 @@ const makePlacedBox = (overrides: Partial<PlacedBox>): PlacedBox => ({
   createdAt: new Date().toISOString(),
   ...overrides,
 });
-
 describe("computeRestingZ", () => {
   it("returns 0 when no boxes are below", () => {
     const z = computeRestingZ(
@@ -27,7 +25,6 @@ describe("computeRestingZ", () => {
     );
     expect(z).toBe(0);
   });
-
   it("returns top of overlapping box", () => {
     const existing = makePlacedBox({ posX: 0, posY: 0, posZ: 0, sizeH: 40 });
     const z = computeRestingZ(
@@ -36,7 +33,6 @@ describe("computeRestingZ", () => {
     );
     expect(z).toBe(40);
   });
-
   it("stacks correctly on the tallest overlapping box", () => {
     const box1 = makePlacedBox({ posX: 0, posY: 0, posZ: 0, sizeH: 40 });
     const box2 = makePlacedBox({ posX: 0, posY: 0, posZ: 40, sizeH: 50 });
@@ -46,7 +42,6 @@ describe("computeRestingZ", () => {
     );
     expect(z).toBe(90);
   });
-
   it("ignores boxes that do not overlap horizontally", () => {
     const existing = makePlacedBox({
       posX: 200,
@@ -61,10 +56,8 @@ describe("computeRestingZ", () => {
     expect(z).toBe(0);
   });
 });
-
 describe("boxFitsInStorage", () => {
   const room = { roomWidth: 6, roomDepth: 5, roomHeight: 2.5 };
-
   it("returns true when box fits within bounds", () => {
     expect(
       boxFitsInStorage(
@@ -73,7 +66,6 @@ describe("boxFitsInStorage", () => {
       ),
     ).toBe(true);
   });
-
   it("returns false when box exceeds room width", () => {
     expect(
       boxFitsInStorage(
@@ -82,7 +74,6 @@ describe("boxFitsInStorage", () => {
       ),
     ).toBe(false);
   });
-
   it("returns false when box position puts it outside bounds", () => {
     expect(
       boxFitsInStorage(
@@ -92,7 +83,6 @@ describe("boxFitsInStorage", () => {
     ).toBe(false);
   });
 });
-
 describe("isPlaced", () => {
   it("returns true when all position coords are set", () => {
     const box: Box = {
@@ -111,7 +101,6 @@ describe("isPlaced", () => {
     };
     expect(isPlaced(box)).toBe(true);
   });
-
   it("returns false when any position coord is null", () => {
     const box: Box = {
       id: "b1",

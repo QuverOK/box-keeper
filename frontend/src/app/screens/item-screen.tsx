@@ -4,7 +4,6 @@ import { useItem, useUpdateItem, useDeleteItem } from "@/entities/item";
 import { usePublicStorage, useStorage } from "@/entities/storage";
 import { extractStorageCategories } from "@/features/item-category";
 import { stripGuestFromPath } from "../navigation";
-
 export function ItemScreen() {
   const { storageId, boxId, itemId } = useParams({
     from: "/storage/$storageId/box/$boxId/item/$itemId",
@@ -13,30 +12,24 @@ export function ItemScreen() {
     from: "/storage/$storageId/box/$boxId/item/$itemId",
   });
   const navigate = useNavigate();
-
   const readOnly = search.guest === "1";
-
   const { data: authItem } = useItem(readOnly ? "" : itemId);
   const { data: authStorage } = useStorage(readOnly ? "" : storageId);
   const { data: publicStorage } = usePublicStorage(readOnly ? storageId : "");
   const updateItem = useUpdateItem(itemId, boxId, storageId);
   const deleteItem = useDeleteItem(boxId, storageId);
-
   const publicBox = publicStorage?.boxes?.find((b) => b.id === boxId);
   const publicItem = publicBox?.items?.find((i) => i.id === itemId);
   const item = readOnly ? publicItem : authItem;
-
   const availableCategories = extractStorageCategories(
     readOnly ? (publicStorage?.boxes ?? []) : (authStorage?.boxes ?? []),
   );
-
   const requireAuth = () => {
     const redirect = stripGuestFromPath(
       window.location.pathname + window.location.search,
     );
     navigate({ to: "/login", search: { redirect } });
   };
-
   if (!item) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -44,7 +37,6 @@ export function ItemScreen() {
       </div>
     );
   }
-
   return (
     <ItemView
       readOnly={readOnly}

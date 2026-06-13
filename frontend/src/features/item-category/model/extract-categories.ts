@@ -1,7 +1,8 @@
 interface BoxWithItems {
-  items?: Array<{ category?: string | null }> | null;
+  items?: Array<{
+    category?: string | null;
+  }> | null;
 }
-
 export function extractStorageCategories(boxes: BoxWithItems[]): string[] {
   const set = new Set<string>();
   for (const box of boxes) {

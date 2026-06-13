@@ -3,36 +3,31 @@ import {
   computeCanvasPad,
   computeTargetFeaturePx,
 } from "@/shared/lib/responsive";
-
 export const ZOOM_MIN = 0.5;
 export const ZOOM_STEP = 1.2;
 export const MIN_FEATURE_CM = 5;
 export const MAX_REFERENCE_BOX_CM = 300;
-/** Default target feature size at wide viewports; use computeTargetFeaturePx for scaling. */
 export const TARGET_FEATURE_PX = 120;
 export const ZOOM_MAX_FLOOR = 4;
 export const ZOOM_MAX_CEILING = 2000;
 export const ZOOM_TO_BOX_PADDING = 0.75;
 export const ZOOM_SLIDER_MIN = 0;
 export const ZOOM_SLIDER_MAX = 100;
-/** Default/reset zoom while in fullscreen — leaves breathing room around the room. */
 export const FULLSCREEN_DEFAULT_ZOOM = 0.8;
-
 interface UseCanvasViewportOptions {
   roomWcm: number;
   roomHcm: number;
-  /** The white canvas element (sized to canvasW x canvasH); used for the
-   *  React-free live preview while pinch-zooming. */
   canvasRef: React.RefObject<HTMLDivElement | null>;
 }
-
 export interface CanvasViewport {
   viewportRef: React.RefObject<HTMLDivElement | null>;
   setViewportNode: (node: HTMLDivElement | null) => void;
-  /** Attach to the content wrapper (sized to contentW x contentH). */
   contentRef: React.RefObject<HTMLDivElement | null>;
   measureRef: (node: HTMLDivElement | null) => void;
-  viewportSize: { w: number; h: number };
+  viewportSize: {
+    w: number;
+    h: number;
+  };
   zoom: number;
   zoomMax: number;
   zoomSliderValue: number;
@@ -53,7 +48,6 @@ export interface CanvasViewport {
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent) => void;
 }
-
 export function computeZoomMax(baseScale: number, viewportW = 800): number {
   if (baseScale <= 0) return ZOOM_MAX_FLOOR;
   const targetPx = computeTargetFeaturePx(viewportW);
@@ -70,7 +64,6 @@ export function computeZoomMax(baseScale: number, viewportW = 800): number {
     Math.max(ZOOM_MAX_FLOOR, forMinFeature, forRefBox),
   );
 }
-
 export function zoomToSliderValue(
   zoom: number,
   zoomMin: number,
@@ -83,7 +76,6 @@ export function zoomToSliderValue(
   const t = (Math.log(clamped) - logMin) / (logMax - logMin);
   return t * ZOOM_SLIDER_MAX;
 }
-
 export function sliderValueToZoom(
   value: number,
   zoomMin: number,
@@ -97,7 +89,6 @@ export function sliderValueToZoom(
   const logMax = Math.log(zoomMax);
   return Math.exp(logMin + t * (logMax - logMin));
 }
-
 export function computeZoomForBox(
   baseScale: number,
   wCm: number,
@@ -111,10 +102,8 @@ export function computeZoomForBox(
   const zoom = effScale / baseScale;
   return Math.min(zoomMax, Math.max(ZOOM_MIN, zoom));
 }
-
 const clampZoom = (z: number, zoomMax: number) =>
   Math.min(zoomMax, Math.max(ZOOM_MIN, z));
-
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
@@ -125,7 +114,6 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
     target.isContentEditable
   );
 };
-
 function computeLayout(
   roomWcm: number,
   roomHcm: number,
@@ -145,7 +133,6 @@ function computeLayout(
   const contentH = canvasH > viewportH ? canvasH + canvasPad * 2 : viewportH;
   return { baseScale, effScale, canvasW, canvasH, contentW, contentH };
 }
-
 export function computeScrollToBoxCenter(params: {
   xCm: number;
   yCm: number;
@@ -156,7 +143,10 @@ export function computeScrollToBoxCenter(params: {
   viewportW: number;
   viewportH: number;
   zoom: number;
-}): { scrollLeft: number; scrollTop: number } {
+}): {
+  scrollLeft: number;
+  scrollTop: number;
+} {
   const { xCm, yCm, wCm, dCm, roomWcm, roomHcm, viewportW, viewportH, zoom } =
     params;
   const { effScale, canvasW, canvasH, contentW, contentH } = computeLayout(
@@ -175,7 +165,6 @@ export function computeScrollToBoxCenter(params: {
     scrollTop: Math.max(0, boxCy - viewportH / 2),
   };
 }
-
 export function useCanvasViewport({
   roomWcm,
   roomHcm,
@@ -185,12 +174,10 @@ export function useCanvasViewport({
   const contentRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
   const viewportCleanupRef = useRef<(() => void) | null>(null);
-
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
   const [zoom, setZoomState] = useState(1);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
-
   const panStateRef = useRef({
     active: false,
     startX: 0,
@@ -198,26 +185,18 @@ export function useCanvasViewport({
     startScrollLeft: 0,
     startScrollTop: 0,
   });
-
-  // Callback ref so the observer follows the actual mounted node. The canvas
-  // node remounts when toggling fullscreen (different JSX trees), so a static
-  // useLayoutEffect observer would keep watching the old, detached node and
-  // leave viewportSize stale.
   const measureRef = useCallback((node: HTMLDivElement | null) => {
     observerRef.current?.disconnect();
     observerRef.current = null;
     if (!node) return;
-
     const measure = () => {
       setViewportSize({ w: node.clientWidth, h: node.clientHeight });
     };
     measure();
-
     const ro = new ResizeObserver(measure);
     ro.observe(node);
     observerRef.current = ro;
   }, []);
-
   const baseScale =
     viewportSize.w > 0 && viewportSize.h > 0 && roomWcm > 0 && roomHcm > 0
       ? Math.min(viewportSize.w / roomWcm, viewportSize.h / roomHcm)
@@ -225,10 +204,8 @@ export function useCanvasViewport({
   const zoomMax = computeZoomMax(baseScale, viewportSize.w);
   const zoomMaxRef = useRef(zoomMax);
   zoomMaxRef.current = zoomMax;
-  // Mirror current zoom so the (stable) gesture closure can seed live preview.
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
-
   const effScale = baseScale * zoom;
   const canvasW = Math.floor(roomWcm * effScale);
   const canvasH = Math.floor(roomHcm * effScale);
@@ -237,19 +214,15 @@ export function useCanvasViewport({
     canvasW > viewportSize.w ? canvasW + canvasPad * 2 : viewportSize.w;
   const contentH =
     canvasH > viewportSize.h ? canvasH + canvasPad * 2 : viewportSize.h;
-
   const zoomSliderValue = zoomToSliderValue(zoom, ZOOM_MIN, zoomMax);
-
   useEffect(() => {
     setZoomState((z) => clampZoom(z, zoomMax));
   }, [zoomMax]);
-
   const setZoom = useCallback((next: number) => {
     const el = viewportRef.current;
     setZoomState((prevZoom) => {
       const nextZoom = clampZoom(next, zoomMaxRef.current);
       if (nextZoom === prevZoom) return prevZoom;
-
       if (el && el.clientWidth > 0 && el.clientHeight > 0) {
         const centerX = el.scrollLeft + el.clientWidth / 2;
         const centerY = el.scrollTop + el.clientHeight / 2;
@@ -262,7 +235,6 @@ export function useCanvasViewport({
       return nextZoom;
     });
   }, []);
-
   const zoomIn = useCallback(
     () => setZoomState((z) => clampZoom(z * ZOOM_STEP, zoomMaxRef.current)),
     [],
@@ -275,11 +247,9 @@ export function useCanvasViewport({
     (target = 1) => setZoomState(clampZoom(target, zoomMaxRef.current)),
     [],
   );
-
   const zoomToBox = useCallback(
     (xCm: number, yCm: number, wCm: number, dCm: number) => {
       if (baseScale <= 0 || viewportSize.w <= 0 || viewportSize.h <= 0) return;
-
       const targetZoom = computeZoomForBox(
         baseScale,
         wCm,
@@ -288,7 +258,6 @@ export function useCanvasViewport({
         viewportSize.w,
       );
       setZoomState(targetZoom);
-
       requestAnimationFrame(() => {
         const el = viewportRef.current;
         if (!el) return;
@@ -309,7 +278,6 @@ export function useCanvasViewport({
     },
     [baseScale, roomWcm, roomHcm, viewportSize.w, viewportSize.h],
   );
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Space") return;
@@ -333,7 +301,6 @@ export function useCanvasViewport({
       panStateRef.current.active = false;
       setIsPanning(false);
     };
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", reset);
@@ -343,18 +310,11 @@ export function useCanvasViewport({
       window.removeEventListener("blur", reset);
     };
   }, []);
-
-  // Callback ref so the zoom listeners (Ctrl/Cmd + wheel, two-finger pinch)
-  // follow the actual mounted node. The viewport node remounts when toggling
-  // fullscreen (different JSX trees), so static useEffect listeners would stay
-  // bound to the old, detached node and zoom would silently stop working.
   const setViewportNode = useCallback((node: HTMLDivElement | null) => {
     viewportCleanupRef.current?.();
     viewportCleanupRef.current = null;
     viewportRef.current = node;
     if (!node) return;
-
-    // Zoom around a viewport-relative focal point, keeping it visually fixed.
     const zoomAround = (focalX: number, focalY: number, factor: number) => {
       const pointerX = focalX + node.scrollLeft;
       const pointerY = focalY + node.scrollTop;
@@ -369,7 +329,6 @@ export function useCanvasViewport({
         return nextZoom;
       });
     };
-
     const handleWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
@@ -380,17 +339,11 @@ export function useCanvasViewport({
         Math.exp(-e.deltaY * 0.0015),
       );
     };
-
     const touchDistance = (touches: TouchList) =>
       Math.hypot(
         touches[0].clientX - touches[1].clientX,
         touches[0].clientY - touches[1].clientY,
       );
-
-    // Two-finger pinch: preview the zoom by writing the canvas + content-wrapper
-    // sizes and scroll straight to the DOM (no React render — the boxes are
-    // percentage-based, so they rescale natively). The real zoom is committed
-    // to state once, when the gesture ends, to avoid per-frame reconciliation.
     let pinchActive = false;
     let pinchPrevDist = 0;
     let liveZoom = 1;
@@ -398,7 +351,6 @@ export function useCanvasViewport({
     let focalX = 0;
     let focalY = 0;
     let rafId = 0;
-
     const applyPreview = () => {
       rafId = 0;
       const vw = node.clientWidth;
@@ -406,7 +358,6 @@ export function useCanvasViewport({
       const ratio = appliedZoom > 0 ? liveZoom / appliedZoom : 1;
       const pointerX = focalX + node.scrollLeft;
       const pointerY = focalY + node.scrollTop;
-
       const { canvasW, canvasH, contentW, contentH } = computeLayout(
         roomWcm,
         roomHcm,
@@ -428,7 +379,6 @@ export function useCanvasViewport({
       node.scrollTop = pointerY * ratio - focalY;
       appliedZoom = liveZoom;
     };
-
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 2) return;
       pinchActive = true;
@@ -461,18 +411,14 @@ export function useCanvasViewport({
         cancelAnimationFrame(rafId);
         rafId = 0;
       }
-      // Flush the final frame so the DOM matches the value we commit, then
-      // commit once — sizes are unchanged by the render, so there is no jump.
       applyPreview();
       setZoomState(clampZoom(liveZoom, zoomMaxRef.current));
     };
-
     node.addEventListener("wheel", handleWheel, { passive: false });
     node.addEventListener("touchstart", handleTouchStart, { passive: false });
     node.addEventListener("touchmove", handleTouchMove, { passive: false });
     node.addEventListener("touchend", handleTouchEnd);
     node.addEventListener("touchcancel", handleTouchEnd);
-
     viewportCleanupRef.current = () => {
       if (rafId) cancelAnimationFrame(rafId);
       node.removeEventListener("wheel", handleWheel);
@@ -482,7 +428,6 @@ export function useCanvasViewport({
       node.removeEventListener("touchcancel", handleTouchEnd);
     };
   }, []);
-
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!spaceHeld) return;
@@ -501,7 +446,6 @@ export function useCanvasViewport({
     },
     [spaceHeld],
   );
-
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     const pan = panStateRef.current;
     if (!pan.active) return;
@@ -510,7 +454,6 @@ export function useCanvasViewport({
     el.scrollLeft = pan.startScrollLeft - (e.clientX - pan.startX);
     el.scrollTop = pan.startScrollTop - (e.clientY - pan.startY);
   }, []);
-
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!panStateRef.current.active) return;
     const el = viewportRef.current;
@@ -520,7 +463,6 @@ export function useCanvasViewport({
     panStateRef.current.active = false;
     setIsPanning(false);
   }, []);
-
   return {
     viewportRef,
     setViewportNode,

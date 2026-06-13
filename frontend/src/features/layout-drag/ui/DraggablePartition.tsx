@@ -1,7 +1,6 @@
 import { GripVertical } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import type { LayoutDragItem } from "../model/useLayoutDrag";
-
 export interface DraggablePartitionProps {
   id: string;
   label: string | null;
@@ -15,7 +14,6 @@ export interface DraggablePartitionProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
-
 export function DraggablePartition({
   label,
   layoutEditMode,

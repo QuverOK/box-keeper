@@ -8,15 +8,18 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-
 const gridVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.05 } },
 };
-
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.28, ease: "easeOut" as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.28, ease: "easeOut" as const },
+  },
   exit: { opacity: 0, scale: 0.94, transition: { duration: 0.15 } },
 };
 import {
@@ -48,13 +51,11 @@ import {
   MAX_ROOM_DEPTH,
   MAX_ROOM_HEIGHT,
 } from "@/shared/model";
-
 interface Storage {
   id: string;
   name: string;
   boxCount: number;
 }
-
 interface DashboardProps {
   userEmail: string;
   storages: Storage[];
@@ -67,7 +68,6 @@ interface DashboardProps {
   ) => void;
   onDeleteStorage: (storageId: string) => void;
 }
-
 export function Dashboard({
   userEmail,
   storages,
@@ -81,7 +81,6 @@ export function Dashboard({
   const [roomHeight, setRoomHeight] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!newStorageName.trim()) errs.name = "Введите название";
@@ -100,7 +99,6 @@ export function Dashboard({
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
-
   const handleCreateStorage = () => {
     if (!validate()) return;
     onCreateStorage(
@@ -116,7 +114,6 @@ export function Dashboard({
     setErrors({});
     setIsDialogOpen(false);
   };
-
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
@@ -127,10 +124,8 @@ export function Dashboard({
       setErrors({});
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Main Content */}
       <main className="page-container py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
@@ -153,7 +148,6 @@ export function Dashboard({
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {/* Name */}
                 <div className="space-y-1">
                   <Label htmlFor="storage-name">Название хранилища</Label>
                   <Input
@@ -170,7 +164,6 @@ export function Dashboard({
                   )}
                 </div>
 
-                {/* Room dimensions */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-foreground">
                     Размеры помещения (в метрах)
@@ -268,7 +261,6 @@ export function Dashboard({
           </Dialog>
         </div>
 
-        {/* Storage Cards */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           variants={gridVariants}
@@ -317,13 +309,17 @@ export function Dashboard({
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                        <AlertDialogContent
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Удалить хранилище?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Удалить хранилище?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Хранилище «{storage.name}» и все коробки с предметами
-                              будут удалены безвозвратно. Это действие нельзя
-                              отменить.
+                              Хранилище «{storage.name}» и все коробки с
+                              предметами будут удалены безвозвратно. Это
+                              действие нельзя отменить.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

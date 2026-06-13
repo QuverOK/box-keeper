@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  Plus,
-  Edit,
-  Trash2,
-  QrCode,
-  Search,
-  Check,
-} from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Search, Check } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import {
@@ -41,14 +33,12 @@ import {
   AlertDialogTrigger,
 } from "@/shared/ui/alert-dialog";
 import { HexColorPicker } from "react-colorful";
-
 interface Item {
   id: string;
   name: string;
   category: string;
   description: string;
 }
-
 interface BoxViewProps {
   boxName: string;
   boxColor: string;
@@ -70,7 +60,6 @@ interface BoxViewProps {
   onDeleteBox: () => void;
   onShowQR: () => void;
 }
-
 const COLOR_PALETTE = [
   { value: "#e0f2fe", label: "Голубой" },
   { value: "#fef3c7", label: "Жёлтый" },
@@ -81,29 +70,23 @@ const COLOR_PALETTE = [
   { value: "#ffedd5", label: "Оранжевый" },
   { value: "#f1f5f9", label: "Серый" },
 ];
-
 export function BoxView({
   boxName,
   boxColor,
   boxSizeW,
   boxSizeD,
   boxSizeH,
-  qrCode: _qrCode,
   items,
   onBack,
   onItemClick,
   onAddItem,
   onUpdateBox,
   onDeleteBox,
-  onShowQR,
 }: BoxViewProps) {
-  // Add item dialog state
   const [newItemName, setNewItemName] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("");
   const [newItemDescription, setNewItemDescription] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  // Edit box dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
@@ -111,9 +94,7 @@ export function BoxView({
   const [editSizeD, setEditSizeD] = useState("");
   const [editSizeH, setEditSizeH] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
-
   const handleAddItem = () => {
     if (newItemName.trim()) {
       onAddItem(newItemName, newItemCategory, newItemDescription);
@@ -123,7 +104,6 @@ export function BoxView({
       setIsAddDialogOpen(false);
     }
   };
-
   const openEditDialog = () => {
     setEditName(boxName);
     setEditColor(boxColor);
@@ -133,18 +113,15 @@ export function BoxView({
     setEditError(null);
     setIsEditDialogOpen(true);
   };
-
   const handleSaveBox = () => {
     const trimmedName = editName.trim();
     if (!trimmedName) {
       setEditError("Введите название коробки");
       return;
     }
-
     const w = parseFloat(editSizeW);
     const d = parseFloat(editSizeD);
     const h = parseFloat(editSizeH);
-
     if (!editSizeW || isNaN(w) || w <= 0) {
       setEditError("Укажите корректную ширину (> 0)");
       return;
@@ -157,21 +134,17 @@ export function BoxView({
       setEditError("Укажите корректную высоту (> 0)");
       return;
     }
-
     onUpdateBox(trimmedName, editColor, w, d, h);
     setIsEditDialogOpen(false);
   };
-
   const filteredItems = items.filter(
     (item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4 mb-4">
@@ -201,13 +174,9 @@ export function BoxView({
                 </div>
               </div>
             </div>
-            {/* <Button variant="outline" size="icon" onClick={onShowQR}>
-              <QrCode className="w-5 h-5" />
-            </Button> */}
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            {/* Add item dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -268,7 +237,6 @@ export function BoxView({
               </DialogContent>
             </Dialog>
 
-            {/* Edit box dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -288,7 +256,6 @@ export function BoxView({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 py-4">
-                  {/* Name */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-box-name">Название</Label>
                     <Input
@@ -302,11 +269,9 @@ export function BoxView({
                     />
                   </div>
 
-                  {/* Color */}
                   <div className="space-y-3">
                     <Label>Цвет</Label>
 
-                    {/* Quick presets */}
                     <div className="flex flex-wrap gap-2">
                       {COLOR_PALETTE.map((c) => (
                         <button
@@ -331,14 +296,13 @@ export function BoxView({
                       ))}
                     </div>
 
-                    {/* Full color picker */}
                     <div className="flex flex-col items-center gap-3">
                       <HexColorPicker
                         color={editColor}
                         onChange={setEditColor}
                         style={{ width: "100%", height: "160px" }}
                       />
-                      {/* Hex input */}
+
                       <div className="flex items-center gap-2 w-full">
                         <div
                           className="w-8 h-8 rounded border flex-shrink-0"
@@ -360,7 +324,6 @@ export function BoxView({
                     </div>
                   </div>
 
-                  {/* Dimensions */}
                   <div className="space-y-2">
                     <Label>Размеры (в сантиметрах)</Label>
                     <div className="grid grid-cols-3 gap-3">
@@ -424,7 +387,6 @@ export function BoxView({
                     </div>
                   </div>
 
-                  {/* Preview */}
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border">
                     <div
                       className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0"
@@ -443,7 +405,6 @@ export function BoxView({
                     </div>
                   </div>
 
-                  {/* Validation error */}
                   {editError && (
                     <p className="text-sm text-red-600">{editError}</p>
                   )}
@@ -460,7 +421,6 @@ export function BoxView({
               </DialogContent>
             </Dialog>
 
-            {/* Delete box */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -494,9 +454,7 @@ export function BoxView({
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Search */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
@@ -509,7 +467,6 @@ export function BoxView({
           </div>
         </div>
 
-        {/* Items Table */}
         <Card>
           <CardContent className="p-0">
             {filteredItems.length > 0 ? (

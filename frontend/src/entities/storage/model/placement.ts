@@ -1,19 +1,12 @@
 import type { Box } from "@/shared/model";
-
 export interface PlacedBox extends Box {
   posX: number;
   posY: number;
   posZ: number;
 }
-
 export function isPlaced(box: Box): box is PlacedBox {
   return box.posX !== null && box.posY !== null && box.posZ !== null;
 }
-
-/**
- * Computes the resting Z position (vertical) for a box being placed at (x, y)
- * on top of existing placed boxes. Returns 0 if no boxes are below it.
- */
 export function computeRestingZ(
   newBox: {
     posX: number;
@@ -29,30 +22,21 @@ export function computeRestingZ(
   const newRight = posX + sizeW;
   const newFront = posY;
   const newBack = posY + sizeD;
-
   let maxZ = 0;
-
   for (const box of placedBoxes) {
     const bLeft = box.posX;
     const bRight = box.posX + box.sizeW;
     const bFront = box.posY;
     const bBack = box.posY + box.sizeD;
-
     const overlapX = newLeft < bRight && newRight > bLeft;
     const overlapY = newFront < bBack && newBack > bFront;
-
     if (overlapX && overlapY) {
       const top = box.posZ + box.sizeH;
       if (top > maxZ) maxZ = top;
     }
   }
-
   return maxZ;
 }
-
-/**
- * Checks whether a box fits within storage room bounds (dimensions in cm, room in m).
- */
 export function boxFitsInStorage(
   box: {
     posX: number;
@@ -62,7 +46,11 @@ export function boxFitsInStorage(
     sizeD: number;
     sizeH: number;
   },
-  room: { roomWidth: number; roomDepth: number; roomHeight: number },
+  room: {
+    roomWidth: number;
+    roomDepth: number;
+    roomHeight: number;
+  },
 ): boolean {
   const roomW = room.roomWidth * 100;
   const roomD = room.roomDepth * 100;

@@ -4,22 +4,18 @@ import { Box, User, QrCode, Moon, Sun, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { useUserStore } from "@/entities/user/model/store";
-
 const navBtnVariants = {
   rest: { scale: 1 },
   hover: { scale: 1.1 },
   tap: { scale: 0.93 },
 };
-
 export function AppHeader() {
   const { token, clearAuth } = useUserStore();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState<boolean>(
     () => localStorage.getItem("darkMode") === "true",
   );
-
   if (!token) return null;
-
   const toggleTheme = () => {
     setIsDark((v) => {
       const next = !v;
@@ -28,12 +24,10 @@ export function AppHeader() {
       return next;
     });
   };
-
   const handleLogout = () => {
     clearAuth();
     navigate({ to: "/login" });
   };
-
   return (
     <motion.header
       className="bg-card border-b sticky top-0 z-10"
@@ -53,7 +47,13 @@ export function AppHeader() {
           <h1 className="text-2xl">BoxKeeper</h1>
         </motion.div>
         <nav className="flex items-center gap-1">
-          <motion.div variants={navBtnVariants} initial="rest" whileHover="hover" whileTap="tap" transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+          <motion.div
+            variants={navBtnVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <Button
               variant="ghost"
               size="icon"
@@ -62,7 +62,13 @@ export function AppHeader() {
               <User className="w-5 h-5" />
             </Button>
           </motion.div>
-          <motion.div variants={navBtnVariants} initial="rest" whileHover="hover" whileTap="tap" transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+          <motion.div
+            variants={navBtnVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <Button
               variant="ghost"
               size="icon"
@@ -71,7 +77,13 @@ export function AppHeader() {
               <QrCode className="w-5 h-5" />
             </Button>
           </motion.div>
-          <motion.div variants={navBtnVariants} initial="rest" whileHover="hover" whileTap="tap" transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+          <motion.div
+            variants={navBtnVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <Button variant="ghost" size="icon" onClick={toggleTheme}>
               {isDark ? (
                 <Sun className="w-5 h-5" />
@@ -80,7 +92,13 @@ export function AppHeader() {
               )}
             </Button>
           </motion.div>
-          <motion.div variants={navBtnVariants} initial="rest" whileHover="hover" whileTap="tap" transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+          <motion.div
+            variants={navBtnVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="tap"
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="w-5 h-5" />
             </Button>

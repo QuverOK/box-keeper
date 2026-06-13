@@ -8,14 +8,12 @@ import { QrScreen } from "./screens/qr-screen";
 import { StorageScreen } from "./screens/storage-screen";
 import { BoxScreen } from "./screens/box-screen";
 import { ItemScreen } from "./screens/item-screen";
-
 const guestSearchSchema = (search: Record<string, unknown>) => ({
   guest:
     search.guest === "1" || search.guest === 1 ? ("1" as const) : undefined,
   highlight:
     typeof search.highlight === "string" ? search.highlight : undefined,
 });
-
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -23,7 +21,6 @@ const indexRoute = createRoute({
     throw redirect({ to: getToken() ? "/dashboard" : "/login" });
   },
 });
-
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
@@ -32,7 +29,6 @@ const loginRoute = createRoute({
   }),
   component: LoginScreen,
 });
-
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/dashboard",
@@ -41,7 +37,6 @@ const dashboardRoute = createRoute({
   },
   component: DashboardScreen,
 });
-
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
@@ -50,13 +45,11 @@ const profileRoute = createRoute({
   },
   component: ProfileScreen,
 });
-
 const qrRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/qr",
   component: QrScreen,
 });
-
 const qrBoxRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/qr/$boxId",
@@ -65,7 +58,6 @@ const qrBoxRoute = createRoute({
   },
   component: QrScreen,
 });
-
 const storageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/storage/$storageId",
@@ -75,7 +67,6 @@ const storageRoute = createRoute({
   },
   component: StorageScreen,
 });
-
 const boxRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/storage/$storageId/box/$boxId",
@@ -88,7 +79,6 @@ const boxRoute = createRoute({
   },
   component: BoxScreen,
 });
-
 const itemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/storage/$storageId/box/$boxId/item/$itemId",
@@ -101,7 +91,6 @@ const itemRoute = createRoute({
   },
   component: ItemScreen,
 });
-
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -113,12 +102,10 @@ const routeTree = rootRoute.addChildren([
   boxRoute,
   itemRoute,
 ]);
-
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
 });
-
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
