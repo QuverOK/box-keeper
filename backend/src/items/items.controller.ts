@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Item, Prisma } from "@prisma/client";
+import { Item, Prisma } from "../generated/prisma/client";
 import { ItemsService } from "./items.service";
 import { CreateItemDto } from "./dto/create-item.dto";
 import { UpdateItemDto } from "./dto/update-item.dto";

@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Box, Prisma } from "@prisma/client";
+import { Box, Prisma } from "../generated/prisma/client";
 import { BoxesService } from "./boxes.service";
 import { CreateBoxDto } from "./dto/create-box.dto";
 import { UpdateBoxDto } from "./dto/update-box.dto";

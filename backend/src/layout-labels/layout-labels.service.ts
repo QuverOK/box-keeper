@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from "@nestjs/common";
-import { LayoutLabel } from "@prisma/client";
+import { LayoutLabel } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreateLayoutLabelDto } from "./dto/create-layout-label.dto";

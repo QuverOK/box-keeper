@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from "@nestjs/common";
-import { Partition } from "@prisma/client";
+import { Partition } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreatePartitionDto } from "./dto/create-partition.dto";

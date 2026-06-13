@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Partition } from "@prisma/client";
+import { Partition } from "../generated/prisma/client";
 import { PartitionsService } from "./partitions.service";
 import { CreatePartitionDto } from "./dto/create-partition.dto";
 import { UpdatePartitionDto } from "./dto/update-partition.dto";

@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { LayoutLabel } from "@prisma/client";
+import { LayoutLabel } from "../generated/prisma/client";
 import { LayoutLabelsService } from "./layout-labels.service";
 import { CreateLayoutLabelDto } from "./dto/create-layout-label.dto";
 import { UpdateLayoutLabelDto } from "./dto/update-layout-label.dto";

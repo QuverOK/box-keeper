@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { Storage } from "@prisma/client";
+import { Storage } from "../generated/prisma/client";
 import { StoragesService, StorageWithRelations } from "./storages.service";
 import { CreateStorageDto } from "./dto/create-storage.dto";
 import { UpdateStorageDto } from "./dto/update-storage.dto";

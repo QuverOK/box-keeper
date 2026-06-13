@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Item, Prisma } from "@prisma/client";
+import { Item, Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface PublicBoxResponse {

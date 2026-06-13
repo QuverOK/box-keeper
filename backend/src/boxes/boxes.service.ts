@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   ConflictException,
 } from "@nestjs/common";
-import { Box, Prisma } from "@prisma/client";
+import { Box, Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { StoragesService } from "../storages/storages.service";
 import { CreateBoxDto } from "./dto/create-box.dto";
