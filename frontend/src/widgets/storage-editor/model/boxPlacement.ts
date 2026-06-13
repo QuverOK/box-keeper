@@ -142,6 +142,28 @@ export function has3DConflict(
     return xOk && yOk && zOk;
   });
 }
+
+const DRAG_SPATIAL_CELL_CM = 50;
+
+export function getNearbyPlacedBoxes(
+  x: number,
+  y: number,
+  box: BoxDims,
+  placedBoxes: PlacedBoxDims[],
+  cellCm = DRAG_SPATIAL_CELL_CM,
+): PlacedBoxDims[] {
+  const pad = cellCm;
+  const minX = x - pad;
+  const maxX = x + box.sizeW + pad;
+  const minY = y - pad;
+  const maxY = y + box.sizeD + pad;
+  return placedBoxes.filter((b) => {
+    if (b.id === box.id) return false;
+    return (
+      b.x < maxX && b.x + b.sizeW > minX && b.y < maxY && b.y + b.sizeD > minY
+    );
+  });
+}
 export interface BoxStack {
   boxes: PlacedBoxDims[];
   topBoxId: string;

@@ -460,7 +460,7 @@ export function Storage3DView({
             onDrop={editMode ? handleStagingDrop : undefined}
           >
             <div className="flex items-center gap-2 mb-3">
-              <Inbox className="w-4 h-4 text-gray-500 flex-shrink-0" />
+              <Inbox className="w-4 h-4 text-gray-500 shrink-0" />
               <h3 className="text-sm font-medium text-gray-700">
                 Не размещённые коробки
               </h3>
@@ -499,7 +499,7 @@ export function Storage3DView({
                   return (
                     <div
                       key={box.id}
-                      className="flex-shrink-0"
+                      className="shrink-0"
                       draggable={editMode}
                       onDragStart={
                         editMode
@@ -533,8 +533,8 @@ export function Storage3DView({
                           </div>
                         )}
                         <div className="p-2 h-full flex flex-col items-center justify-center text-center">
-                          <BoxIcon className="w-5 h-5 mb-1 flex-shrink-0" />
-                          <p className="text-xs font-medium break-words line-clamp-2 leading-tight">
+                          <BoxIcon className="w-5 h-5 mb-1 shrink-0" />
+                          <p className="text-xs font-medium wrap-break-word line-clamp-2 leading-tight">
                             {box.name}
                           </p>
                           <p className="text-xs text-gray-600 mt-0.5">
@@ -549,7 +549,7 @@ export function Storage3DView({
                   );
                 })}
                 {editMode && (
-                  <div className="flex-shrink-0 w-28 h-24 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center">
+                  <div className="shrink-0 w-28 h-24 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center">
                     <p className="text-xs text-gray-400 text-center px-3">
                       Перетащите сюда с холста
                     </p>
@@ -727,16 +727,16 @@ export function Storage3DView({
             >
               <div className="flex items-start gap-2 mb-3">
                 <div
-                  className="w-8 h-8 rounded-md flex-shrink-0 flex items-center justify-center border border-black/10 mt-0.5"
+                  className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center border border-black/10 mt-0.5"
                   style={{ backgroundColor: focusedBox.color }}
                 >
                   <BoxIcon className="w-4 h-4 text-gray-600" />
                 </div>
-                <p className="font-semibold text-gray-900 text-sm leading-tight flex-1 min-w-0 break-words">
+                <p className="font-semibold text-gray-900 text-sm leading-tight flex-1 min-w-0 wrap-break-word">
                   {focusedBox.name}
                 </p>
                 <button
-                  className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors flex-shrink-0 text-xs leading-none"
+                  className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors shrink-0 text-xs leading-none"
                   onClick={() => setFocusedBoxId(null)}
                   aria-label="Закрыть"
                 >

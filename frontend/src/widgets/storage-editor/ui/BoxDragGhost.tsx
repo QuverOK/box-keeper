@@ -1,15 +1,17 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { cn } from "@/shared/lib/cn";
 import {
   computeRestingZ,
   has3DConflict,
   overlapsZone,
   overlapsPartitionFootprint,
+  getNearbyPlacedBoxes,
   type BoxDims,
   type PlacedBoxDims,
   type XYZone,
   type PartitionDims,
 } from "../model/boxPlacement";
+
 interface BoxDragGhostProps {
   draggedBox: BoxDims;
   dragOverCm: {
@@ -24,14 +26,32 @@ interface BoxDragGhostProps {
   };
   forbiddenZone?: XYZone | null;
   partitions?: PartitionDims[];
+  hideStackLabel?: boolean;
 }
-export function BoxDragGhost({
+
+const ghostTone = {
+  conflict: {
+    bg: "bg-red-100 dark:bg-red-950/40",
+    ring: "ring-red-400 dark:ring-red-700",
+  },
+  stack: {
+    bg: "bg-green-100 dark:bg-green-950/40",
+    ring: "ring-green-400 dark:ring-green-700",
+  },
+  default: {
+    bg: "bg-blue-100 dark:bg-blue-950/40",
+    ring: "ring-blue-400 dark:ring-blue-700",
+  },
+} as const;
+
+export const BoxDragGhost = memo(function BoxDragGhost({
   draggedBox,
   dragOverCm,
   placedBoxes,
   room,
   forbiddenZone,
   partitions = [],
+  hideStackLabel = false,
 }: BoxDragGhostProps) {
   const xCm = Math.max(
     0,
@@ -41,12 +61,18 @@ export function BoxDragGhost({
     0,
     Math.min(dragOverCm.yCm, room.depthCm - draggedBox.sizeD),
   );
+
+  const nearbyBoxes = useMemo(
+    () => getNearbyPlacedBoxes(xCm, yCm, draggedBox, placedBoxes),
+    [xCm, yCm, draggedBox, placedBoxes],
+  );
+
   const { conflict, inForbiddenZone, onPartition, stackLabel } = useMemo(() => {
     const restZ = computeRestingZ(
       xCm,
       yCm,
       draggedBox,
-      placedBoxes,
+      nearbyBoxes,
       partitions,
     );
     const roomHeightOk = restZ + draggedBox.sizeH <= room.heightCm;
@@ -61,38 +87,44 @@ export function BoxDragGhost({
       !roomHeightOk ||
       partition ||
       (!forbidden &&
-        has3DConflict(xCm, yCm, restZ, draggedBox, placedBoxes, partitions));
+        has3DConflict(xCm, yCm, restZ, draggedBox, nearbyBoxes, partitions));
     return {
       conflict: hasConflict,
       inForbiddenZone: forbidden,
       onPartition: partition,
       stackLabel:
-        !hasConflict && !forbidden && restZ > 0
-          ? `↑${Math.round(restZ + draggedBox.sizeH)} см`
-          : null,
+        hideStackLabel || hasConflict || forbidden || restZ <= 0
+          ? null
+          : `↑${Math.round(restZ + draggedBox.sizeH)} см`,
     };
   }, [
     xCm,
     yCm,
     draggedBox,
-    placedBoxes,
+    nearbyBoxes,
     forbiddenZone,
     partitions,
     room.heightCm,
+    hideStackLabel,
   ]);
+
+  const tone = conflict
+    ? ghostTone.conflict
+    : stackLabel
+      ? ghostTone.stack
+      : ghostTone.default;
+
   const leftPct = (xCm / room.widthCm) * 100;
   const topPct = (yCm / room.depthCm) * 100;
   const widthPct = (draggedBox.sizeW / room.widthCm) * 100;
   const heightPct = (draggedBox.sizeD / room.depthCm) * 100;
+
   return (
     <div
       className={cn(
-        "absolute pointer-events-none rounded-md border-2 border-dashed transition-colors duration-100 flex items-center justify-center z-50",
-        conflict
-          ? "bg-red-100 dark:bg-red-950/40 border-red-400 dark:border-red-700"
-          : stackLabel
-            ? "bg-green-100 dark:bg-green-950/40 border-green-400 dark:border-green-700"
-            : "bg-blue-100 dark:bg-blue-950/40 border-blue-400 dark:border-blue-700",
+        "absolute z-50 pointer-events-none rounded-md ring-2 ring-dashed transition-none isolate flex items-center justify-center",
+        tone.bg,
+        tone.ring,
       )}
       style={{
         left: `${leftPct}%`,
@@ -100,6 +132,7 @@ export function BoxDragGhost({
         width: `${widthPct}%`,
         height: `${heightPct}%`,
         opacity: 0.75,
+        contain: "layout style paint",
       }}
     >
       {stackLabel && (
@@ -119,4 +152,4 @@ export function BoxDragGhost({
       )}
     </div>
   );
-}
+});

@@ -55,9 +55,9 @@ function PasswordChecklist({ password }: { password: string }) {
             className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
           >
             {ok ? (
-              <Check className="w-3.5 h-3.5 flex-shrink-0" />
+              <Check className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <X className="w-3.5 h-3.5 flex-shrink-0" />
+              <X className="w-3.5 h-3.5 shrink-0" />
             )}
             {rule.label}
           </li>
@@ -188,7 +188,7 @@ export function Profile({
             <CardContent className="space-y-4">
               {successMessage && (
                 <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                  <Check className="w-4 h-4 flex-shrink-0" />
+                  <Check className="w-4 h-4 shrink-0" />
                   {successMessage}
                 </div>
               )}

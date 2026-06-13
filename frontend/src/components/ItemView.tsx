@@ -130,7 +130,7 @@ export function ItemView({
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="flex-shrink-0"
+              className="shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -144,7 +144,7 @@ export function ItemView({
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
+            <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto justify-end">
               {readOnly && onRequireAuth && (
                 <Button variant="outline" size="sm" onClick={promptAuth}>
                   Войти для редактирования

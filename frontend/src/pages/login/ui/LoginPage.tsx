@@ -48,9 +48,9 @@ function PasswordChecklist({
             className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
           >
             {ok ? (
-              <Check className="w-3.5 h-3.5 flex-shrink-0" />
+              <Check className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <X className="w-3.5 h-3.5 flex-shrink-0" />
+              <X className="w-3.5 h-3.5 shrink-0" />
             )}
             {rule.label}
           </li>

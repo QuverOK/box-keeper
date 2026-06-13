@@ -495,7 +495,7 @@ export function StorageView({
                   </div>
                   {storageEditError && (
                     <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-red-700">{storageEditError}</p>
                     </div>
                   )}
@@ -610,7 +610,7 @@ export function StorageView({
                                 onClick={() => onBoxClick(box.id)}
                               >
                                 <div
-                                  className="w-9 h-9 rounded flex-shrink-0 flex items-center justify-center text-sm"
+                                  className="w-9 h-9 rounded shrink-0 flex items-center justify-center text-sm"
                                   style={{ backgroundColor: box.color }}
                                 >
                                   📦
@@ -648,14 +648,14 @@ export function StorageView({
               </AnimatePresence>
             </div>
 
-            <div className="flex gap-2 flex-shrink-0 max-[400px]:w-full max-[400px]:[&_button]:flex-1">
+            <div className="flex gap-2 shrink-0 max-[400px]:w-full max-[400px]:[&_button]:flex-1">
               <Dialog
                 open={readOnly ? false : isDialogOpen}
                 onOpenChange={handleDialogOpenChange}
               >
                 <DialogTrigger asChild>
                   <Button
-                    className="gap-2 flex-shrink-0"
+                    className="gap-2 shrink-0"
                     onClick={handleAddBoxClick}
                     aria-label="Добавить коробку"
                   >
@@ -759,7 +759,7 @@ export function StorageView({
                     </div>
                     {validationError && (
                       <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                         <p className="text-sm text-red-700">
                           {validationError}
                         </p>
@@ -781,7 +781,7 @@ export function StorageView({
               </Dialog>
               <Button
                 variant={effectiveLayoutEditMode ? "default" : "outline"}
-                className="gap-2 flex-shrink-0"
+                className="gap-2 shrink-0"
                 onClick={() => {
                   if (readOnly) {
                     promptAuth();
@@ -796,7 +796,7 @@ export function StorageView({
 
               <Button
                 variant={effectiveEditMode ? "default" : "outline"}
-                className="gap-2 flex-shrink-0"
+                className="gap-2 shrink-0"
                 onClick={() => void handleEditModeToggle()}
                 disabled={isSavingStorage}
                 aria-label={effectiveEditMode ? "Готово" : "Редактировать"}
@@ -928,7 +928,7 @@ export function StorageView({
                       <div className="p-4">
                         <div className="flex items-center gap-3 mb-2">
                           <div
-                            className="w-12 h-12 rounded flex items-center justify-center flex-shrink-0"
+                            className="w-12 h-12 rounded flex items-center justify-center shrink-0"
                             style={{ backgroundColor: box.color }}
                           >
                             <BoxIcon className="w-6 h-6" />
