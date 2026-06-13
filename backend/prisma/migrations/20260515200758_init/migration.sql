@@ -1,0 +1,72 @@
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "name" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Storage" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "roomWidth" DOUBLE PRECISION NOT NULL,
+    "roomDepth" DOUBLE PRECISION NOT NULL,
+    "roomHeight" DOUBLE PRECISION NOT NULL,
+    "gridSizeX" INTEGER NOT NULL DEFAULT 5,
+    "gridSizeY" INTEGER NOT NULL DEFAULT 4,
+    "gridSizeZ" INTEGER NOT NULL DEFAULT 3,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Storage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Box" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "color" TEXT NOT NULL DEFAULT '#e0f2fe',
+    "qrCode" TEXT NOT NULL,
+    "sizeW" DOUBLE PRECISION NOT NULL,
+    "sizeD" DOUBLE PRECISION NOT NULL,
+    "sizeH" DOUBLE PRECISION NOT NULL,
+    "posX" DOUBLE PRECISION,
+    "posY" DOUBLE PRECISION,
+    "posZ" DOUBLE PRECISION,
+    "storageId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Box_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Item" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "description" TEXT,
+    "photo" TEXT,
+    "boxId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Box_qrCode_key" ON "Box"("qrCode");
+
+-- AddForeignKey
+ALTER TABLE "Storage" ADD CONSTRAINT "Storage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Box" ADD CONSTRAINT "Box_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Item" ADD CONSTRAINT "Item_boxId_fkey" FOREIGN KEY ("boxId") REFERENCES "Box"("id") ON DELETE CASCADE ON UPDATE CASCADE;

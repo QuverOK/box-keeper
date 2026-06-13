@@ -1,0 +1,34 @@
+-- CreateTable
+CREATE TABLE "Partition" (
+    "id" TEXT NOT NULL,
+    "storageId" TEXT NOT NULL,
+    "x" DOUBLE PRECISION NOT NULL,
+    "y" DOUBLE PRECISION NOT NULL,
+    "z" DOUBLE PRECISION NOT NULL,
+    "width" DOUBLE PRECISION NOT NULL,
+    "depth" DOUBLE PRECISION NOT NULL,
+    "height" DOUBLE PRECISION NOT NULL,
+    "label" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Partition_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LayoutLabel" (
+    "id" TEXT NOT NULL,
+    "storageId" TEXT NOT NULL,
+    "x" DOUBLE PRECISION NOT NULL,
+    "y" DOUBLE PRECISION NOT NULL,
+    "text" TEXT NOT NULL,
+    "fontSize" INTEGER NOT NULL DEFAULT 12,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "LayoutLabel_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Partition" ADD CONSTRAINT "Partition_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LayoutLabel" ADD CONSTRAINT "LayoutLabel_storageId_fkey" FOREIGN KEY ("storageId") REFERENCES "Storage"("id") ON DELETE CASCADE ON UPDATE CASCADE;

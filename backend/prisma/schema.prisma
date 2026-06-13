@@ -1,0 +1,98 @@
+// This is your Prisma schema file.
+// Database: SQLite (for development), can be changed to PostgreSQL for production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3NF compliance:
+//  - Every non-key attribute depends ONLY on its table's primary key
+//  - No transitive dependencies (room dimensions belong to Storage,
+//    box dimensions belong to Box, position belongs to Box)
+//  - All foreign keys are explicit with cascading deletes
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  storages     Storage[]
+  createdAt    DateTime  @default(now())
+}
+
+model Storage {
+  id         String   @id @default(cuid())
+  name       String
+  roomWidth  Float
+  roomDepth  Float
+  roomHeight Float
+  gridSizeX  Int      @default(5)
+  gridSizeY  Int      @default(4)
+  gridSizeZ  Int      @default(3)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  boxes      Box[]
+  partitions Partition[]
+  layoutLabels LayoutLabel[]
+  createdAt  DateTime @default(now())
+}
+
+model Partition {
+  id        String   @id @default(cuid())
+  storageId String
+  storage   Storage  @relation(fields: [storageId], references: [id], onDelete: Cascade)
+  x         Float
+  y         Float
+  z         Float
+  width     Float
+  depth     Float
+  height    Float
+  label     String?
+  createdAt DateTime @default(now())
+}
+
+model LayoutLabel {
+  id        String   @id @default(cuid())
+  storageId String
+  storage   Storage  @relation(fields: [storageId], references: [id], onDelete: Cascade)
+  x         Float
+  y         Float
+  text      String
+  fontSize  Int      @default(12)
+  createdAt DateTime @default(now())
+}
+
+model Box {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#e0f2fe")
+  qrCode    String   @unique
+  sizeW     Float
+  sizeD     Float
+  sizeH     Float
+  posX      Float?
+  posY      Float?
+  posZ      Float?
+  storageId String
+  storage   Storage  @relation(fields: [storageId], references: [id], onDelete: Cascade)
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  description String?
+  photo       String?
+  boxId       String
+  box         Box      @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
