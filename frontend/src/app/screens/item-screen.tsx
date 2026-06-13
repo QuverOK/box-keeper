@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { ItemView } from "@/widgets/item-view";
+import { ItemView } from "@/widgets/item-details";
 import { useItem, useUpdateItem, useDeleteItem } from "@/entities/item";
 import { usePublicStorage, useStorage } from "@/entities/storage";
 import { extractStorageCategories } from "@/features/item-category";

@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { BoxView } from "@/widgets/box-view";
+import { BoxView } from "@/widgets/box-details";
 import { useBox, useUpdateBox, useDeleteBox } from "@/entities/box";
 import { useCreateItem } from "@/entities/item";
 import { usePublicStorage, useStorage } from "@/entities/storage";

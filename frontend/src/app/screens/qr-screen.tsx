@@ -2,9 +2,8 @@ import { useCallback, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { QRScanner } from "@/components/QRScanner";
 import { useBox } from "@/entities/box";
-import { useUserStore } from "@/entities/user/model/store";
-import { api } from "@/shared/api/client";
-import { normalizeApiError } from "@/shared/api/errors";
+import { useUserStore } from "@/entities/user";
+import { api, normalizeApiError } from "@/shared/api";
 import {
   AlertDialog,
   AlertDialogAction,

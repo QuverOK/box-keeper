@@ -5,7 +5,7 @@ import {
   useCreateStorage,
   useDeleteStorage,
 } from "@/entities/storage";
-import { useUserStore } from "@/entities/user/model/store";
+import { useUserStore } from "@/entities/user";
 export function DashboardScreen() {
   const navigate = useNavigate();
   const { user } = useUserStore();

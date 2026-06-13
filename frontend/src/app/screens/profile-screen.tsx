@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Profile } from "@/components/Profile";
-import { useUserStore } from "@/entities/user/model/store";
+import { useUserStore } from "@/entities/user";
 export function ProfileScreen() {
   const navigate = useNavigate();
   const { user, clearAuth } = useUserStore();

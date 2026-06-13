@@ -8,3 +8,5 @@ export {
   useMoveAnyBox,
   useDeleteBox,
 } from "./api/hooks";
+export { fetchPublicBoxByQr } from "./api/public-hooks";
+export type { PublicBoxResponse } from "./api/public-hooks";

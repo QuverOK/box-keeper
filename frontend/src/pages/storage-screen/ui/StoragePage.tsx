@@ -26,7 +26,7 @@ import { Label } from "@/shared/ui/label";
 import React, { useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { MIN_BOX_DIMENSION_CM } from "@/features/box-validation";
-import { Storage3DView } from "@/widgets/storage-view";
+import { Storage3DView } from "@/widgets/storage-editor";
 interface BoxItem {
   id: string;
   name: string;

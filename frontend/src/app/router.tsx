@@ -1,13 +1,15 @@
 import { createRouter, createRoute, redirect } from "@tanstack/react-router";
 import { Route as rootRoute } from "./routes/__root";
 import { getToken, requireAuth, requireAuthOrGuest } from "./route-guards";
-import { LoginScreen } from "./screens/login-screen";
-import { DashboardScreen } from "./screens/dashboard-screen";
-import { ProfileScreen } from "./screens/profile-screen";
-import { QrScreen } from "./screens/qr-screen";
-import { StorageScreen } from "./screens/storage-screen";
-import { BoxScreen } from "./screens/box-screen";
-import { ItemScreen } from "./screens/item-screen";
+import {
+  LoginScreen,
+  DashboardScreen,
+  ProfileScreen,
+  QrScreen,
+  StorageScreen,
+  BoxScreen,
+  ItemScreen,
+} from "./lazy-screens";
 const guestSearchSchema = (search: Record<string, unknown>) => ({
   guest:
     search.guest === "1" || search.guest === 1 ? ("1" as const) : undefined,
