@@ -253,7 +253,7 @@ export function StorageView({
                               onClick={() => onBoxClick(box.id)}
                             >
                               <div
-                                className="w-7 h-7 rounded flex-shrink-0 flex items-center justify-center text-xs"
+                                className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-xs"
                                 style={{ backgroundColor: box.color }}
                               >
                                 📦
@@ -286,7 +286,7 @@ export function StorageView({
 
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
-                <Button className="gap-2 flex-shrink-0">
+                <Button className="gap-2 shrink-0">
                   <Plus className="w-4 h-4" />
                   Добавить коробку
                 </Button>
@@ -375,7 +375,7 @@ export function StorageView({
                   </div>
                   {validationError && (
                     <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                       <p className="text-sm text-red-700">{validationError}</p>
                     </div>
                   )}
@@ -394,7 +394,7 @@ export function StorageView({
 
             <Button
               variant={editMode ? "default" : "outline"}
-              className="gap-2 flex-shrink-0"
+              className="gap-2 shrink-0"
               onClick={() => setEditMode(!editMode)}
             >
               <Edit className="w-4 h-4" />
@@ -461,7 +461,7 @@ export function StorageView({
                     <div className="p-4">
                       <div className="flex items-center gap-3 mb-2">
                         <div
-                          className="w-12 h-12 rounded flex items-center justify-center flex-shrink-0"
+                          className="w-12 h-12 rounded flex items-center justify-center shrink-0"
                           style={{ backgroundColor: box.color }}
                         >
                           <BoxIcon className="w-6 h-6" />

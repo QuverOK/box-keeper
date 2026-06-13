@@ -45,9 +45,9 @@ function PasswordChecklist({ password }: { password: string }) {
             className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-600" : "text-gray-400"}`}
           >
             {ok ? (
-              <Check className="w-3.5 h-3.5 flex-shrink-0" />
+              <Check className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <X className="w-3.5 h-3.5 flex-shrink-0" />
+              <X className="w-3.5 h-3.5 shrink-0" />
             )}
             {rule.label}
           </li>
@@ -196,7 +196,7 @@ export function Profile({ userEmail, onBack, onLogout }: ProfileProps) {
                     transition={{ duration: 0.2 }}
                     style={{ overflow: "hidden" }}
                   >
-                    <Check className="w-4 h-4 flex-shrink-0" />
+                    <Check className="w-4 h-4 shrink-0" />
                     {successMessage}
                   </motion.div>
                 )}

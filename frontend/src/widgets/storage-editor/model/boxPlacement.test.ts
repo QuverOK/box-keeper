@@ -5,6 +5,7 @@ import {
   findNearestValidXY,
   computeStacks,
   overlapsPartitionFootprint,
+  getNearbyPlacedBoxes,
 } from "./boxPlacement";
 import type { PlacedBoxDims, BoxDims, PartitionDims } from "./boxPlacement";
 const box = (overrides?: Partial<BoxDims>): BoxDims => ({
@@ -285,5 +286,14 @@ describe("computeStacks", () => {
         .join(","),
     );
     expect(ids.sort()).toEqual(["a1,a2", "b1,b2"]);
+  });
+});
+
+describe("getNearbyPlacedBoxes", () => {
+  it("filters boxes outside padded search bounds", () => {
+    const nearby = placed({ id: "near", x: 10, y: 10 });
+    const far = placed({ id: "far", x: 400, y: 400 });
+    const result = getNearbyPlacedBoxes(0, 0, box(), [nearby, far]);
+    expect(result.map((b) => b.id)).toEqual(["near"]);
   });
 });

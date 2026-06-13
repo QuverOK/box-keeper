@@ -1,9 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { getTransparentDragImage } from "@/shared/lib/drag-image";
 import {
-  computeRestingZ,
   computeSettleUpdates,
-  has3DConflict,
   findNearestValidXY,
   overlapsZone,
   type BoxDims,
@@ -11,6 +9,12 @@ import {
   type XYZone,
   type PartitionDims,
 } from "./boxPlacement";
+import {
+  clientPosToCm,
+  shouldUpdateDragPosition,
+  type GridRect,
+} from "./boxDragCoords";
+
 export interface DragRoom {
   widthCm: number;
   depthCm: number;
@@ -50,6 +54,12 @@ export interface BoxDragState {
   handleStagingDragLeave: (e: React.DragEvent) => void;
   handleStagingDrop: (e: React.DragEvent) => void;
   setHoveredBoxId: (id: string | null) => void;
+  dragGrabOffsetRef: React.RefObject<{ pxX: number; pxY: number }>;
+  gridRectRef: React.RefObject<GridRect | null>;
+  updateDragOverFromClientPos: (clientX: number, clientY: number) => void;
+  commitBoxDrop: (boxId: string, clientX: number, clientY: number) => void;
+  clearDragSession: () => void;
+  startDragSession: (boxId: string, clientX?: number, clientY?: number) => void;
 }
 interface UseBoxDragOptions {
   boxes: (BoxDims & {
@@ -71,6 +81,7 @@ function isPlacedBox(
 ): b is PlacedBoxDims {
   return b.x !== undefined && b.y !== undefined && b.z !== undefined;
 }
+
 export function useBoxDrag({
   boxes,
   room,
@@ -88,111 +99,120 @@ export function useBoxDrag({
   const [isStagingDragOver, setIsStagingDragOver] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const dragGrabOffsetRef = useRef({ pxX: 0, pxY: 0 });
+  const gridRectRef = useRef<GridRect | null>(null);
   const rafIdRef = useRef<number | null>(null);
+  const pendingDragPosRef = useRef<{ xCm: number; yCm: number } | null>(null);
+  const draggedBoxRef = useRef<(BoxDims & { x?: number; y?: number }) | null>(
+    null,
+  );
   const placedBoxes = boxes.filter(isPlacedBox);
-  const getCanvasCmFromEvent = useCallback(
-    (
-      e: React.DragEvent,
-    ): {
-      xCm: number;
-      yCm: number;
-    } | null => {
-      if (!gridRef.current) return null;
-      const rect = gridRef.current.getBoundingClientRect();
-      const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
-      const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
-      return {
-        xCm: (topLeftPxX / rect.width) * room.widthCm,
-        yCm: (topLeftPxY / rect.height) * room.depthCm,
-      };
-    },
-    [room.widthCm, room.depthCm],
-  );
-  const clampPos = (
-    xCm: number,
-    yCm: number,
-    box: BoxDims,
-  ): {
-    xCm: number;
-    yCm: number;
-  } => ({
-    xCm: Math.max(0, Math.min(xCm, room.widthCm - box.sizeW)),
-    yCm: Math.max(0, Math.min(yCm, room.depthCm - box.sizeD)),
-  });
-  const handleDragStart = useCallback(
-    (
-      e: React.DragEvent,
-      boxId: string,
-      fromCanvas = false,
-      overrideOffsetPx?: {
-        pxX: number;
-        pxY: number;
-      },
-    ) => {
-      if (overrideOffsetPx) {
-        dragGrabOffsetRef.current = overrideOffsetPx;
-      } else if (fromCanvas) {
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        dragGrabOffsetRef.current = {
-          pxX: e.clientX - rect.left,
-          pxY: e.clientY - rect.top,
-        };
-      } else {
-        dragGrabOffsetRef.current = { pxX: 0, pxY: 0 };
+
+  const refreshGridRect = useCallback(() => {
+    if (!gridRef.current) {
+      gridRectRef.current = null;
+      return null;
+    }
+    const rect = gridRef.current.getBoundingClientRect();
+    gridRectRef.current = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+    return gridRectRef.current;
+  }, []);
+
+  const initDragPosition = useCallback(
+    (boxId: string, clientX?: number, clientY?: number) => {
+      const box = boxes.find((b) => b.id === boxId);
+      if (!box) return;
+      draggedBoxRef.current = box;
+
+      let xCm = isPlacedBox(box) ? box.x : 0;
+      let yCm = isPlacedBox(box) ? box.y : 0;
+      if (clientX != null && clientY != null) {
+        const rect = gridRectRef.current ?? refreshGridRect();
+        if (rect) {
+          const raw = clientPosToCm(
+            clientX,
+            clientY,
+            rect,
+            dragGrabOffsetRef.current,
+            room,
+          );
+          xCm = Math.max(0, Math.min(raw.xCm, room.widthCm - box.sizeW));
+          yCm = Math.max(0, Math.min(raw.yCm, room.depthCm - box.sizeD));
+        }
       }
-      setDraggedBoxId(boxId);
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", boxId);
-      e.dataTransfer.setDragImage(getTransparentDragImage(), 0, 0);
+
+      setDragOverCm({ xCm, yCm });
     },
-    [],
+    [boxes, refreshGridRect, room],
   );
-  const handleDragEnd = useCallback(() => {
+
+  const updateDragOverFromClientPos = useCallback(
+    (clientX: number, clientY: number) => {
+      const overStaging = document
+        .elementFromPoint(clientX, clientY)
+        ?.closest("[data-staging-drop-zone]");
+      if (overStaging) {
+        setIsStagingDragOver(true);
+        setDragOverCm(null);
+        return;
+      }
+      setIsStagingDragOver(false);
+
+      const rect = gridRectRef.current ?? refreshGridRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+      const next = clientPosToCm(
+        clientX,
+        clientY,
+        rect,
+        dragGrabOffsetRef.current,
+        room,
+      );
+
+      pendingDragPosRef.current = next;
+      if (rafIdRef.current !== null) return;
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const pending = pendingDragPosRef.current;
+        if (!pending) return;
+        setDragOverCm((prev) =>
+          shouldUpdateDragPosition(prev, pending) ? pending : prev,
+        );
+      });
+    },
+    [room, refreshGridRect],
+  );
+
+  const clearDragSession = useCallback(() => {
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
+    pendingDragPosRef.current = null;
+    draggedBoxRef.current = null;
+    gridRectRef.current = null;
     setDraggedBoxId(null);
     setDragOverCm(null);
     setIsStagingDragOver(false);
   }, []);
-  const handleGridDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      setIsStagingDragOver(false);
-      if (!gridRef.current) return;
-      const rect = gridRef.current.getBoundingClientRect();
-      const topLeftPxX = e.clientX - rect.left - dragGrabOffsetRef.current.pxX;
-      const topLeftPxY = e.clientY - rect.top - dragGrabOffsetRef.current.pxY;
-      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = requestAnimationFrame(() => {
-        setDragOverCm({
-          xCm: (topLeftPxX / rect.width) * room.widthCm,
-          yCm: (topLeftPxY / rect.height) * room.depthCm,
-        });
-        rafIdRef.current = null;
-      });
-    },
-    [room.widthCm, room.depthCm],
-  );
-  const handleGridDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDragOverCm(null);
-    }
-  }, []);
-  const handleGridDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const boxId = e.dataTransfer.getData("text/plain");
-      setDraggedBoxId(null);
-      setDragOverCm(null);
-      setIsStagingDragOver(false);
-      if (!boxId || !gridRef.current) return;
+
+  const commitBoxDrop = useCallback(
+    (boxId: string, clientX: number, clientY: number) => {
       const draggedBox = boxes.find((b) => b.id === boxId);
       if (!draggedBox) return;
-      const raw = getCanvasCmFromEvent(e);
-      if (!raw) return;
+      const rect = gridRectRef.current ?? refreshGridRect();
+      if (!rect) return;
+      const raw = clientPosToCm(
+        clientX,
+        clientY,
+        rect,
+        dragGrabOffsetRef.current,
+        room,
+      );
       if (
         forbiddenZoneRef?.current &&
         overlapsZone(raw.xCm, raw.yCm, draggedBox, forbiddenZoneRef.current)
@@ -237,8 +257,76 @@ export function useBoxDrag({
       onMoveBox,
       forbiddenZoneRef,
       partitions,
-      getCanvasCmFromEvent,
+      refreshGridRect,
     ],
+  );
+
+  const startDragSession = useCallback(
+    (boxId: string, clientX?: number, clientY?: number) => {
+      refreshGridRect();
+      setDraggedBoxId(boxId);
+      initDragPosition(boxId, clientX, clientY);
+    },
+    [refreshGridRect, initDragPosition],
+  );
+
+  const handleDragStart = useCallback(
+    (
+      e: React.DragEvent,
+      boxId: string,
+      fromCanvas = false,
+      overrideOffsetPx?: {
+        pxX: number;
+        pxY: number;
+      },
+    ) => {
+      if (overrideOffsetPx) {
+        dragGrabOffsetRef.current = overrideOffsetPx;
+      } else if (fromCanvas) {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        dragGrabOffsetRef.current = {
+          pxX: e.clientX - rect.left,
+          pxY: e.clientY - rect.top,
+        };
+      } else {
+        dragGrabOffsetRef.current = { pxX: 0, pxY: 0 };
+      }
+      startDragSession(boxId, e.clientX, e.clientY);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", boxId);
+      e.dataTransfer.setDragImage(getTransparentDragImage(), 0, 0);
+    },
+    [startDragSession],
+  );
+  const handleDragEnd = useCallback(() => {
+    clearDragSession();
+  }, [clearDragSession]);
+  const handleGridDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (isStagingDragOver) setIsStagingDragOver(false);
+      updateDragOverFromClientPos(e.clientX, e.clientY);
+    },
+    [updateDragOverFromClientPos, isStagingDragOver],
+  );
+  const handleGridDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverCm(null);
+    }
+  }, []);
+  const handleGridDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const boxId = e.dataTransfer.getData("text/plain");
+      if (!boxId) {
+        clearDragSession();
+        return;
+      }
+      commitBoxDrop(boxId, e.clientX, e.clientY);
+      clearDragSession();
+    },
+    [commitBoxDrop, clearDragSession],
   );
   const handleStagingDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -258,6 +346,7 @@ export function useBoxDrag({
       setDraggedBoxId(null);
       setDragOverCm(null);
       setIsStagingDragOver(false);
+      gridRectRef.current = null;
       if (!boxId) return;
       const box = boxes.find((b) => b.id === boxId);
       if (!box || !isPlacedBox(box)) return;
@@ -269,17 +358,6 @@ export function useBoxDrag({
     },
     [boxes, placedBoxes, onMoveBox, partitions],
   );
-  const _ = (() => {
-    if (!dragOverCm || !draggedBoxId) return null;
-    const box = boxes.find((b) => b.id === draggedBoxId);
-    if (!box) return null;
-    const { xCm, yCm } = clampPos(dragOverCm.xCm, dragOverCm.yCm, box);
-    const z = computeRestingZ(xCm, yCm, box, placedBoxes, partitions);
-    const roomHeightOk = z + box.sizeH <= room.heightCm;
-    const conflict = has3DConflict(xCm, yCm, z, box, placedBoxes, partitions);
-    return { xCm, yCm, z, roomHeightOk, conflict };
-  })();
-  void _;
   return {
     draggedBoxId,
     hoveredBoxId,
@@ -295,5 +373,11 @@ export function useBoxDrag({
     handleStagingDragLeave,
     handleStagingDrop,
     setHoveredBoxId,
+    dragGrabOffsetRef,
+    gridRectRef,
+    updateDragOverFromClientPos,
+    commitBoxDrop,
+    clearDragSession,
+    startDragSession,
   };
 }

@@ -305,7 +305,7 @@ export function BoxView({
 
                       <div className="flex items-center gap-2 w-full">
                         <div
-                          className="w-8 h-8 rounded border flex-shrink-0"
+                          className="w-8 h-8 rounded border shrink-0"
                           style={{ backgroundColor: editColor }}
                         />
                         <Input
@@ -389,7 +389,7 @@ export function BoxView({
 
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border">
                     <div
-                      className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0"
+                      className="w-10 h-10 rounded flex items-center justify-center shrink-0"
                       style={{ backgroundColor: editColor }}
                     >
                       <span className="text-lg">📦</span>

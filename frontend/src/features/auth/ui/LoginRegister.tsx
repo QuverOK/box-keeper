@@ -58,9 +58,9 @@ function PasswordChecklist({
               className={`flex items-center gap-1.5 text-xs ${check.passed ? "text-green-600" : "text-gray-400"}`}
             >
               {check.passed ? (
-                <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                <Check className="w-3.5 h-3.5 shrink-0" />
               ) : (
-                <X className="w-3.5 h-3.5 flex-shrink-0" />
+                <X className="w-3.5 h-3.5 shrink-0" />
               )}
               {check.label}
             </motion.li>

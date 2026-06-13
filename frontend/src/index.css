@@ -187,9 +187,35 @@ html {
   font-size: var(--font-size);
 }
 
+.storage-canvas-viewport {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.storage-staging-scroll {
+  touch-action: pan-x pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
 .miro-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+@media (pointer: coarse) {
+  .miro-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .storage-grid {
+    contain: strict;
+  }
+
+  .is-interacting * {
+    transition-duration: 0s !important;
+  }
 }
 
 .miro-scroll::-webkit-scrollbar {
