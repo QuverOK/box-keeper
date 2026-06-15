@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, type KeyboardEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -9,6 +9,7 @@ import {
   MAX_ITEM_DESCRIPTION_LENGTH,
 } from "@/entities/item";
 import { createEmptyDraftItem, type DraftItem } from "../model/bulkItemTypes";
+import { mergeCategorySuggestions } from "@/features/item-category";
 export interface BulkItemsFormProps {
   items: DraftItem[];
   onChange: (items: DraftItem[]) => void;
@@ -22,7 +23,18 @@ export function BulkItemsForm({
   compact = false,
 }: BulkItemsFormProps) {
   const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const categoryInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const descriptionInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const addRowButtonRef = useRef<HTMLButtonElement>(null);
   const pendingFocusIdRef = useRef<string | null>(null);
+  const categorySuggestions = useMemo(
+    () =>
+      mergeCategorySuggestions(
+        categories,
+        items.map((item) => item.category),
+      ),
+    [categories, items],
+  );
   const updateItem = (id: string, patch: Partial<DraftItem>) => {
     onChange(
       items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
@@ -30,6 +42,8 @@ export function BulkItemsForm({
   };
   const removeItem = (id: string) => {
     nameInputRefs.current.delete(id);
+    categoryInputRefs.current.delete(id);
+    descriptionInputRefs.current.delete(id);
     if (items.length <= 1) {
       onChange([createEmptyDraftItem()]);
       return;
@@ -41,20 +55,42 @@ export function BulkItemsForm({
     pendingFocusIdRef.current = newItem.id;
     onChange([...items, newItem]);
   };
-  const handleDescriptionTab = (
+  const handleNameKeyDown = (
     e: KeyboardEvent<HTMLInputElement>,
-    index: number,
+    itemId: string,
   ) => {
     if (e.key !== "Tab" || e.shiftKey) return;
     e.preventDefault();
-    const nextItem = items[index + 1];
-    if (nextItem) {
-      nameInputRefs.current.get(nextItem.id)?.focus();
-    } else {
-      const newItem = createEmptyDraftItem();
-      pendingFocusIdRef.current = newItem.id;
-      onChange([...items, newItem]);
-    }
+    categoryInputRefs.current.get(itemId)?.focus();
+  };
+  const handleCategoryKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    itemId: string,
+  ) => {
+    if (e.key !== "Tab" || e.shiftKey) return;
+    e.preventDefault();
+    descriptionInputRefs.current.get(itemId)?.focus();
+  };
+  const handleDescriptionKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Tab" || e.shiftKey) return;
+    e.preventDefault();
+    addRowButtonRef.current?.focus();
+  };
+  const handleDescriptionShiftTab = (
+    e: KeyboardEvent<HTMLInputElement>,
+    itemId: string,
+  ) => {
+    if (e.key !== "Tab" || !e.shiftKey) return;
+    e.preventDefault();
+    categoryInputRefs.current.get(itemId)?.focus();
+  };
+  const handleCategoryShiftTab = (
+    e: KeyboardEvent<HTMLInputElement>,
+    itemId: string,
+  ) => {
+    if (e.key !== "Tab" || !e.shiftKey) return;
+    e.preventDefault();
+    nameInputRefs.current.get(itemId)?.focus();
   };
   useEffect(() => {
     const focusId = pendingFocusIdRef.current;
@@ -104,6 +140,7 @@ export function BulkItemsForm({
               placeholder="Название"
               value={item.name}
               onChange={(e) => updateItem(item.id, { name: e.target.value })}
+              onKeyDown={(e) => handleNameKeyDown(e, item.id)}
             />
           </div>
           <div className={compact ? "" : "space-y-2"}>
@@ -111,13 +148,25 @@ export function BulkItemsForm({
             <CategoryCombobox
               value={item.category}
               onChange={(category) => updateItem(item.id, { category })}
-              categories={categories}
+              categories={categorySuggestions}
               placeholder="Категория"
+              inputRef={(el) => {
+                if (el) categoryInputRefs.current.set(item.id, el);
+                else categoryInputRefs.current.delete(item.id);
+              }}
+              onInputKeyDown={(e) => {
+                handleCategoryShiftTab(e, item.id);
+                handleCategoryKeyDown(e, item.id);
+              }}
             />
           </div>
           <div className={compact ? "" : "space-y-2"}>
             {!compact && <Label>Описание</Label>}
             <Input
+              ref={(el) => {
+                if (el) descriptionInputRefs.current.set(item.id, el);
+                else descriptionInputRefs.current.delete(item.id);
+              }}
               placeholder="Описание"
               value={item.description}
               maxLength={MAX_ITEM_DESCRIPTION_LENGTH}
@@ -126,7 +175,10 @@ export function BulkItemsForm({
                   description: clampItemDescription(e.target.value),
                 })
               }
-              onKeyDown={(e) => handleDescriptionTab(e, index)}
+              onKeyDown={(e) => {
+                handleDescriptionShiftTab(e, item.id);
+                handleDescriptionKeyDown(e);
+              }}
             />
             {!compact && (
               <p className="text-xs text-muted-foreground text-right">
@@ -150,6 +202,7 @@ export function BulkItemsForm({
         </div>
       ))}
       <Button
+        ref={addRowButtonRef}
         type="button"
         variant="outline"
         size="sm"

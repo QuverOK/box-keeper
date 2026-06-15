@@ -255,20 +255,11 @@ export function StorageView({
       isPointerDragging: boolean;
     }) => {
       const api = layoutDragApiRef.current;
-      setLayoutDragApi((prev) => {
-        if (!api) return null;
-        const next = { ...api, ...meta };
-        if (
-          prev &&
-          prev.draggedLayoutItem === next.draggedLayoutItem &&
-          prev.touchHoldTemplate === next.touchHoldTemplate &&
-          prev.isTouchHoldActive === next.isTouchHoldActive &&
-          prev.isPointerDragging === next.isPointerDragging
-        ) {
-          return prev;
-        }
-        return next;
-      });
+      if (!api) {
+        setLayoutDragApi(null);
+        return;
+      }
+      setLayoutDragApi({ ...api, ...meta });
     },
     [],
   );

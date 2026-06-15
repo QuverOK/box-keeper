@@ -18,6 +18,16 @@ function getFullscreenElement(): Element | null {
   return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
 }
 
+function isOverlayModalOpen(): boolean {
+  return !!document.querySelector(
+    [
+      '[data-slot="dialog-content"][data-state="open"]',
+      '[data-slot="alert-dialog-content"][data-state="open"]',
+      '[data-slot="sheet-content"][data-state="open"]',
+    ].join(", "),
+  );
+}
+
 async function requestElementFullscreen(el: HTMLElement): Promise<void> {
   const target = el as HTMLElement & {
     webkitRequestFullscreen?: () => void;
@@ -54,6 +64,7 @@ export function useFullscreen(): UseFullscreenResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const wantsNativeRef = useRef(false);
+  const escapeDismissedModalRef = useRef(false);
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -90,18 +101,28 @@ export function useFullscreen(): UseFullscreenResult {
   useEffect(() => {
     if (!isFullscreen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !getFullscreenElement()) {
+      if (e.key !== "Escape") return;
+      if (isOverlayModalOpen()) {
+        escapeDismissedModalRef.current = true;
+        return;
+      }
+      escapeDismissedModalRef.current = false;
+      if (!getFullscreenElement()) {
         setIsFullscreen(false);
       }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
   useEffect(() => {
     const onChange = () => {
       if (!getFullscreenElement()) {
         wantsNativeRef.current = false;
+        if (escapeDismissedModalRef.current) {
+          escapeDismissedModalRef.current = false;
+          return;
+        }
         setIsFullscreen(false);
       }
     };
