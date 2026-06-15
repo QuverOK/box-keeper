@@ -869,7 +869,7 @@ export function Storage3DView({
       >
         <div
           ref={setDialogPortalHost}
-          className="fixed inset-0 z-100 pointer-events-none [&_[data-slot=dialog-overlay]]:pointer-events-auto [&_[data-slot=dialog-content]]:pointer-events-auto"
+          className="fixed inset-0 z-100 pointer-events-none [&_[data-slot=dialog-overlay]]:pointer-events-auto [&_[data-slot=dialog-content]]:pointer-events-auto [&_[data-slot=popover-content]]:pointer-events-auto [&_[data-radix-popper-content-wrapper]]:pointer-events-auto"
         />
         <div className="relative h-full w-full overflow-hidden">
           {canvasRegion}

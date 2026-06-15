@@ -711,13 +711,8 @@ function StorageCanvasInner({
     layoutPointerDrag.isTouchHoldActive,
     layoutPointerDrag.isPointerDragging,
     onLayoutDragMetaChange,
+    isFullscreen,
   ]);
-
-  useEffect(() => {
-    return () => {
-      layoutDragApiRef.current = null;
-    };
-  }, [layoutDragApiRef]);
 
   dragApiRef.current = {
     draggedBoxId,
